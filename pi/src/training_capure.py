@@ -2,6 +2,7 @@ import cv2
 import os
 from gpiozero import DistanceSensor
 from time import sleep
+from pathlib import Path
 
 # Configuration
 TRIG = 4  # GPIO pin for Trig
@@ -10,6 +11,10 @@ DETECTION_DISTANCE = 0.5  # Detection threshold in meters (adjustable)
 
 # Initialize ultrasonic sensor
 sensor = DistanceSensor(echo=ECHO, trigger=TRIG)
+
+# Determine the absolute path to the shared folder
+repo_root = Path(__file__).resolve().parent.parent  # Adjust based on repo structure
+shared_dir = repo_root / "shared" / "training_photos"
 
 # Ensure the directory for saving images exists
 def ensure_directory(directory):
@@ -23,7 +28,7 @@ if dog_name not in ["Mila", "Nova"]:
     exit()
 
 # Directory for saving images
-output_dir = f"training_photos/{dog_name}"
+output_dir = shared_dir / dog_name
 ensure_directory(output_dir)
 
 # Open the camera
@@ -50,8 +55,8 @@ try:
                 continue
 
             # Save the captured frame
-            filename = f"{output_dir}/{dog_name}_{photo_count:04d}.jpg"
-            cv2.imwrite(filename, frame)
+            filename = output_dir / f"{dog_name}_{photo_count:04d}.jpg"
+            cv2.imwrite(str(filename), frame)
             print(f"Image saved as {filename}")
             photo_count += 1
 
