@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 # Load DNN model
-modelFile = "res10_300x300_ssd_iter_140000_fp16.caffemodel"
+modelFile = "res10_300x300_ssd_iter_140000.caffemodel"
 configFile = "deploy.prototxt"
 net = cv2.dnn.readNetFromCaffe(configFile, modelFile)
 
