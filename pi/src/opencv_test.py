@@ -4,7 +4,7 @@ from flask import Flask, Response
 import numpy as np
 
 # Load YOLO model (using YOLOv5 from Ultralytics)
-model = torch.hub.load('ultralytics/yolov5', 'yolov5s')  # Small YOLOv5 model
+model = torch.hub.load('ultralytics/yolov5', 'yolov5n')  # Small YOLOv5 model
 
 # Open the camera
 cap = cv2.VideoCapture(0)
