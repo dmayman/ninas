@@ -1,99 +1,58 @@
-from flask import Flask, Response, render_template_string, request
 import cv2
+import numpy as np
 
-app = Flask(__name__)
+# Load DNN model
+modelFile = "res10_300x300_ssd_iter_140000_fp16.caffemodel"
+configFile = "deploy.prototxt"
+net = cv2.dnn.readNetFromCaffe(configFile, modelFile)
 
 # Open the camera
 cap = cv2.VideoCapture(0)
-if not cap.isOpened():
-    print("Error: Could not open camera.")
-    exit()
-
-# Define current processing effect
-current_effect = "none"
-
-# HTML Template with buttons
-HTML_TEMPLATE = """
-<!doctype html>
-<html>
-<head>
-    <title>OpenCV Stream with Effects</title>
-</head>
-<body>
-    <h1>OpenCV Stream with Effects</h1>
-    <img src="/video_feed" width="640"><br><br>
-    <button onclick="changeEffect('none')">No Effect</button>
-    <button onclick="changeEffect('gray')">Grayscale</button>
-    <button onclick="changeEffect('edges')">Edge Detection</button>
-    <button onclick="changeEffect('blur')">Gaussian Blur</button>
-    <button onclick="changeEffect('text')">Text Overlay</button>
-    <button onclick="changeEffect('shapes')">Shapes</button>
-    <button onclick="changeEffect('faces')">Face Detection</button>
-    <script>
-        function changeEffect(effect) {
-            fetch('/set_effect?effect=' + effect);
-        }
-    </script>
-</body>
-</html>
-"""
-
-@app.route('/')
-def index():
-    # Render the main page
-    return render_template_string(HTML_TEMPLATE)
-
-@app.route('/set_effect')
-def set_effect():
-    # Set the current effect based on button click
-    global current_effect
-    current_effect = request.args.get('effect', 'none')
-    return ("", 204)
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
 
 def generate_frames():
-    global current_effect
-
     while True:
-        # Capture frame-by-frame
         success, frame = cap.read()
         if not success:
             break
 
-        # Apply the selected effect
-        if current_effect == "gray":
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)  # Convert back to BGR for encoding
-        elif current_effect == "edges":
-            gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            edges = cv2.Canny(gray_frame, 50, 150)
-            frame = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
-        elif current_effect == "blur":
-            frame = cv2.GaussianBlur(frame, (15, 15), 0)
-        elif current_effect == "text":
-            cv2.putText(frame, "OpenCV Stream!", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-        elif current_effect == "shapes":
-            cv2.rectangle(frame, (50, 50), (200, 200), (0, 255, 0), 2)
-            cv2.circle(frame, (320, 240), 50, (255, 0, 0), 3)
-        elif current_effect == "faces":
-            gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-            faces = face_cascade.detectMultiScale(gray_frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
-            for (x, y, w, h) in faces:
-                cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
+        # Prepare input for the DNN model
+        h, w = frame.shape[:2]
+        blob = cv2.dnn.blobFromImage(frame, 1.0, (300, 300), (104.0, 177.0, 123.0), swapRB=False, crop=False)
+        net.setInput(blob)
+        detections = net.forward()
+
+        # Draw detections on the frame
+        for i in range(detections.shape[2]):
+            confidence = detections[0, 0, i, 2]
+            if confidence > 0.5:  # Confidence threshold
+                box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
+                (x1, y1, x2, y2) = box.astype("int")
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                cv2.putText(frame, f"{int(confidence * 100)}%", (x1, y1 - 10),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
 
         # Encode frame to JPEG
         ret, buffer = cv2.imencode('.jpg', frame)
         frame = buffer.tobytes()
 
-        # Yield the frame
+        # Yield frame for the stream
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
+# Flask server
+from flask import Flask, Response
+
+app = Flask(__name__)
+
+@app.route('/')
+def index():
+    return "<h1>Face Detection Stream</h1><img src='/video_feed' width='640'>"
+
 @app.route('/video_feed')
 def video_feed():
-    # Route to stream video
-    return Response(generate_frames(),
-                    mimetype='multipart/x-mixed-replace; boundary=frame')
+    return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
