@@ -5,7 +5,7 @@ from pathlib import Path
 app = Flask(__name__)
 
 # Determine the absolute path to the shared photo directory
-repo_root = Path(__file__).resolve().parent.parent  # Adjust based on repo structure
+repo_root = Path(__file__).resolve().parent.parent.parent  # Adjust based on repo structure
 PHOTO_DIR = repo_root / "static" / "training_photos"
 
 # List of dog names
