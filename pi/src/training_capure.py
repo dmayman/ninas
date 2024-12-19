@@ -13,7 +13,7 @@ DETECTION_DISTANCE = 0.5  # Detection threshold in meters (adjustable)
 sensor = DistanceSensor(echo=ECHO, trigger=TRIG)
 
 # Determine the absolute path to the shared folder
-repo_root = Path(__file__).resolve().parent.parent  # Adjust based on repo structure
+repo_root = Path(__file__).resolve().parent.parent.parent  # Adjust based on repo structure
 shared_dir = repo_root / "static" / "training_photos"
 
 # Ensure the directory for saving images exists
