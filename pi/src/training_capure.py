@@ -1,18 +1,17 @@
+import cv2
 import os
-from time import sleep
 from gpiozero import DistanceSensor
-from picamera import PiCamera
+from time import sleep
 
 # Configuration
 TRIG = 4  # GPIO pin for Trig
 ECHO = 17  # GPIO pin for Echo
-DETECTION_DISTANCE = 0.2  # Detection threshold in meters (adjust as needed)
+DETECTION_DISTANCE = 0.5  # Detection threshold in meters (adjustable)
 
-# Initialize components
+# Initialize ultrasonic sensor
 sensor = DistanceSensor(echo=ECHO, trigger=TRIG)
-camera = PiCamera()
 
-# Function to ensure directory exists
+# Ensure the directory for saving images exists
 def ensure_directory(directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -23,28 +22,47 @@ if dog_name not in ["Mila", "Nova"]:
     print("Invalid name. Please enter 'Mila' or 'Nova'.")
     exit()
 
-# Create directory for the dog
-output_dir = f"../../shared/training_photos/{dog_name}"
+# Directory for saving images
+output_dir = f"training_photos/{dog_name}"
 ensure_directory(output_dir)
+
+# Open the camera
+cap = cv2.VideoCapture(0)
+
+if not cap.isOpened():
+    print("Error: Could not open camera.")
+    exit()
 
 print(f"Training for {dog_name}. Photos will be saved in '{output_dir}'.")
 
-# Start capturing photos
 photo_count = 0
+
 try:
     while True:
-        # Check distance
+        # Check distance from the sensor
         if sensor.distance <= DETECTION_DISTANCE:
-            # Capture photo
-            photo_path = f"{output_dir}/{dog_name}_{photo_count:04d}.jpg"
-            camera.capture(photo_path)
-            print(f"Captured: {photo_path}")
+            print("Dog detected! Capturing photo...")
+
+            # Capture a single frame
+            ret, frame = cap.read()
+            if not ret:
+                print("Error: Failed to capture frame.")
+                continue
+
+            # Save the captured frame
+            filename = f"{output_dir}/{dog_name}_{photo_count:04d}.jpg"
+            cv2.imwrite(filename, frame)
+            print(f"Image saved as {filename}")
             photo_count += 1
-            sleep(1)  # Avoid capturing multiple photos too quickly
+
+            # Avoid capturing too quickly
+            sleep(1)
         else:
             print("No dog detected. Waiting...")
         sleep(0.5)
 except KeyboardInterrupt:
-    print("Photo capture stopped by user.")
+    print("Training capture stopped by user.")
 finally:
-    camera.close()
+    # Release the camera
+    cap.release()
+    print("Camera released.")
