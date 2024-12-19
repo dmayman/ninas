@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dog Photo Reviewer</title>
+</head>
+<body>
+    <h1>Dog Photo Reviewer</h1>
+    <ul>
+        {% for dog, count in dogs.items() %}
+            <li><a href="/photos/{{ dog }}">{{ dog }} ({{ count }} photos)</a></li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
