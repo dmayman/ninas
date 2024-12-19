@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Wait for the network to initialize
+sleep 10
+
 # Navigate to your repository
 cd /ninas
 
