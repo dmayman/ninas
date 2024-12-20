@@ -2,11 +2,21 @@ from flask import Flask, render_template, request, redirect, url_for
 import os
 from pathlib import Path
 
-app = Flask(__name__)
-
 # Determine the absolute path to the shared photo directory
-repo_root = Path(__file__).resolve().parent.parent.parent  # Adjust based on repo structure
+def find_repo_root(start_path):
+    current_path = Path(start_path).resolve()
+    while not (current_path / ".repo_root").exists():
+        if current_path.parent == current_path:
+            raise FileNotFoundError("Could not locate repo root marker (.repo_root)")
+        current_path = current_path.parent
+    return current_path
+
+repo_root = find_repo_root(__file__)
+
 PHOTO_DIR = repo_root / "static" / "training_photos"
+
+# Initialize Flask
+app = Flask(__name__, static_folder=str(repo_root / "static"))
 
 # List of dog names
 DOGS = ["Mila", "Nova"]
