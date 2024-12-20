@@ -1,4 +1,4 @@
-from flask import Flask, Response, jsonify
+from flask import Flask, Response
 import cv2
 from gpiozero import DistanceSensor
 
@@ -37,25 +37,13 @@ def video_feed():
 @app.route('/')
 def index():
     # Home page with distance reading
-    return """
-        <h1>Camera Stream</h1>
-        <p id="distance">Current Distance: Loading...</p>
-        <img src='/video_feed' width='640'>
-        <script>
-            async function updateDistance() {
-                const response = await fetch('/distance');
-                const data = await response.json();
-                document.getElementById('distance').innerText = `Current Distance: ${data.distance.toFixed(2)} cm`;
-            }
-            setInterval(updateDistance, 1000); // Update every second
-        </script>
-    """
-
-@app.route('/distance')
-def get_distance():
-    # Return the current distance as JSON
     current_distance = sensor.distance * 100  # Convert to cm
-    return jsonify({"distance": current_distance})
+    distance_text = f"<p>Current Distance: {current_distance:.2f} cm</p>"
+    return f"""
+        <h1>Camera Stream</h1>
+        {distance_text}
+        <img src='/video_feed' width='640'>
+    """
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
