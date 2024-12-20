@@ -15,6 +15,10 @@ repo_root = find_repo_root(__file__)
 
 PHOTO_DIR = repo_root / "static" / "training_photos"
 
+# test
+print(f"PHOTO_DIR: {PHOTO_DIR}")
+print(f"Exists? {PHOTO_DIR.exists()}")
+
 # Initialize Flask
 app = Flask(__name__, static_folder=str(repo_root / "static"))
 
