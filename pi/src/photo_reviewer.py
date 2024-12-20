@@ -23,9 +23,18 @@ DOGS = ["Mila", "Nova"]
 
 @app.route("/")
 def index():
-    # List all available dogs and their photo counts
-    dog_folders = {dog: len(os.listdir(PHOTO_DIR / dog)) for dog in DOGS}
-    return render_template("index.html", dogs=dog_folders)
+    dog_folders = {}
+    dog_previews = {}
+
+    for dog in DOGS:
+        photo_dir = PHOTO_DIR / dog
+        photos = [f for f in os.listdir(photo_dir) if f.endswith(".jpg")]
+        dog_folders[dog] = len(photos)
+
+        # Get the first photo or set to None if no photos exist
+        dog_previews[dog] = photos[0] if photos else None
+
+    return render_template("index.html", dogs=dog_folders, previews=dog_previews)
 
 @app.route("/photos/<dog>")
 def photos(dog):
