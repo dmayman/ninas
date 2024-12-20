@@ -15,14 +15,15 @@ repo_root = find_repo_root(__file__)
 
 PHOTO_DIR = repo_root / "static" / "training_photos"
 
+
+# Initialize Flask
+app = Flask(__name__, static_folder=str(repo_root / "static"))
+
 # test
 print(f"Repo root: {repo_root}")
 print(f"Static folder: {app.static_folder}")
 print(f"PHOTO_DIR: {PHOTO_DIR}")
 print(f"Exists? {PHOTO_DIR.exists()}")
-
-# Initialize Flask
-app = Flask(__name__, static_folder=str(repo_root / "static"))
 
 # List of dog names
 DOGS = ["Mila", "Nova"]
