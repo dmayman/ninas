@@ -74,21 +74,21 @@
         a.delete-link {
             text-decoration: none;
         }
-        a.title{
+        a.back{
             font-family: Arial, Helvetica, sans-serif;
             text-decoration: none;
             font-size: 16px;
             padding: 12px 16px;
             border-radius: 99px;
             color: black;
-            background: #f5dae3;
+            background: #ddd;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Photos of {{ dog }}</h1>
-        <a class ="title" href="/">⬅️ Back to Home</a>
+        <a class ="back" href="/">⬅️ Back to Home</a>
         <div class="photo-grid">
             {% for photo in photos %}
             <div class="photo-card">
