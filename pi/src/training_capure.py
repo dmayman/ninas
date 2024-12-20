@@ -42,6 +42,7 @@ ensure_directory(output_dir)
 
 # Open the camera
 cap = cv2.VideoCapture(0)
+cap.set(cv2.CAP_PROP_FPS, 15)
 
 if not cap.isOpened():
     print("Error: Could not open camera.")
