@@ -10,7 +10,7 @@
     <ul>
         {% for photo in photos %}
             <li>
-                <img src="/static/{{ dog }}/{{ photo }}" alt="{{ photo }}" style="max-width: 300px;">
+                <img src="/static/training_photos/{{ dog }}/{{ photo }}" alt="{{ photo }}" style="max-width: 300px;">
                 <a href="/delete/{{ dog }}/{{ photo }}">Delete</a>
             </li>
         {% endfor %}
