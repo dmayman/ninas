@@ -1,18 +1,11 @@
 from flask import Flask, Response
 import cv2
-from gpiozero import DistanceSensor
 
 app = Flask(__name__)
 
 # Open the camera (adjust index if necessary)
 camera = cv2.VideoCapture(0)
 camera.set(cv2.CAP_PROP_FPS, 15)
-
-# Initialize the ultrasonic sensor
-# Replace TRIG and ECHO with the GPIO pins you are using
-TRIG = 4
-ECHO = 17
-sensor = DistanceSensor(echo=ECHO, trigger=TRIG)
 
 def generate_frames():
     while True:
@@ -36,14 +29,8 @@ def video_feed():
 
 @app.route('/')
 def index():
-    # Home page with distance reading
-    current_distance = sensor.distance * 100  # Convert to cm
-    distance_text = f"<p>Current Distance: {current_distance:.2f} cm</p>"
-    return f"""
-        <h1>Camera Stream</h1>
-        {distance_text}
-        <img src='/video_feed' width='640'>
-    """
+    # Home page
+    return "<h1>Camera Stream</h1><img src='/video_feed' width='640'>"
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
