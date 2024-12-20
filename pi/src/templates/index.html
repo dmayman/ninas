@@ -96,16 +96,15 @@
         <div class="dog-grid">
             {% for dog, count in dogs.items() %}
             <div class="dog-card">
-                <img src="/static/training_photos/{{ dog }}/example.jpg" alt="Photo of {{ dog }}" onerror="this.src='https://via.placeholder.com/250?text=No+Image'">
+                <img src="{{ url_for('static', filename='training_photos/' + dog + '/' + (previews[dog] if previews[dog] else '')) }}" 
+                     alt="Photo of {{ dog }}" 
+                     onerror="this.src='https://via.placeholder.com/250?text=No+Image'">
                 <h2>{{ dog }}</h2>
                 <p>{{ count }} Photos</p>
                 <a href="/photos/{{ dog }}">View Photos</a>
             </div>
             {% endfor %}
         </div>
-        <footer>
-            <p>&copy; {{ year }} Dog Photo Reviewer</p>
-        </footer>
     </div>
 </body>
 </html>
