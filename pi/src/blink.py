@@ -1,15 +1,17 @@
-from gpiozero import LED
+import RPi.GPIO as GPIO
 from time import sleep
 
-# Initialize the LED on GPIO 0
-led = LED(0)
+# Set up GPIO 0
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(0, GPIO.OUT)
 
 try:
     while True:
-        led.on()  # Turn the LED on
+        GPIO.output(0, GPIO.HIGH)  # Set GPIO 0 to HIGH
         sleep(1)  # Wait for 1 second
-        led.off()  # Turn the LED off
+        GPIO.output(0, GPIO.LOW)   # Set GPIO 0 to LOW
         sleep(1)  # Wait for 1 second
 except KeyboardInterrupt:
     print("Exiting...")
-    led.off()  # Ensure the LED is off before exiting
+finally:
+    GPIO.cleanup()  # Reset GPIO settings
