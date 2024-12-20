@@ -56,7 +56,7 @@ try:
     while True:
         # Check distance from the sensor
         if sensor.distance <= DETECTION_DISTANCE:
-            print("Dog detected! Capturing photo...")
+            print(f"Dog detected {sensor.distance}m away. Capturing photo...")
 
             # Capture a single frame
             ret, frame = cap.read()
