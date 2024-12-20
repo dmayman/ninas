@@ -8,8 +8,11 @@ GPIO.setup(0, GPIO.OUT)
 try:
     while True:
         GPIO.output(0, GPIO.HIGH)  # Set GPIO 0 to HIGH
+        print ("High")
         sleep(1)  # Wait for 1 second
+        
         GPIO.output(0, GPIO.LOW)   # Set GPIO 0 to LOW
+        print ("Low")
         sleep(1)  # Wait for 1 second
 except KeyboardInterrupt:
     print("Exiting...")
