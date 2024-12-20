@@ -3,7 +3,7 @@ from time import sleep
 
 # Set up GPIO 0
 GPIO.setmode(GPIO.BCM)
-GPIO.setup(0, GPIO.OUT)
+GPIO.setup(2, GPIO.OUT)
 
 try:
     while True:
