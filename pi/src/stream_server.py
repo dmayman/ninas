@@ -5,6 +5,7 @@ app = Flask(__name__)
 
 # Open the camera (adjust index if necessary)
 camera = cv2.VideoCapture(0)
+camera.set(cv2.CAP_PROP_FPS, 15)
 
 def generate_frames():
     while True:
