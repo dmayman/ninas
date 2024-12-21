@@ -45,10 +45,10 @@ def index():
 
 @app.route("/photos/<category>")
 def photos(category):
-    if category not in ["Untagged", "Mila", "Nova"]:
+    if category not in ["untagged", "Mila", "Nova"]:
         return "Invalid category.", 404
 
-    if category == "Untagged":
+    if category == "untagged":
         photo_dir = untagged_dir
     elif category == "Mila":
         photo_dir = mila_dir
@@ -69,7 +69,7 @@ def label_photo(photo, label):
 
     dest = mila_dir / photo if label == "Mila" else nova_dir / photo
     src.rename(dest)
-    return redirect(url_for("photos", category="Untagged"))
+    return redirect(url_for("photos", category="untagged"))
 
 @app.route("/delete/<photo>")
 def delete_photo(photo):
@@ -78,7 +78,7 @@ def delete_photo(photo):
         return "Photo not found.", 404
 
     src.unlink()
-    return redirect(url_for("photos", category="Untagged"))
+    return redirect(url_for("photos", category="untagged"))
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
