@@ -30,7 +30,7 @@ def index():
     categories = {
         "Mila": mila_dir,
         "Nova": nova_dir,
-        "Untagged": untagged_dir
+        "untagged": untagged_dir
     }
 
     dog_folders = {}
