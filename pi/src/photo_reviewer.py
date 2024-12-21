@@ -2,8 +2,6 @@ from flask import Flask, render_template, request, redirect, url_for
 import os
 from pathlib import Path
 
-app = Flask(__name__)
-
 # Determine the absolute path to the shared folder
 def find_repo_root(start_path):
     current_path = Path(start_path).resolve()
@@ -23,19 +21,25 @@ nova_dir = photos_dir / "Nova"
 for directory in [untagged_dir, mila_dir, nova_dir]:
     directory.mkdir(parents=True, exist_ok=True)
 
+# Initialize Flask
+app = Flask(__name__, static_folder=str(repo_root / "static"))
+
 @app.route("/")
 def index():
-    # Prepare the dictionaries for dogs and previews
+    # Prepare the dictionaries for all categories
+    categories = {
+        "Mila": mila_dir,
+        "Nova": nova_dir,
+        "Untagged": untagged_dir
+    }
+
     dog_folders = {}
     dog_previews = {}
 
-    for dog_dir in [mila_dir, nova_dir]:
-        dog_name = dog_dir.name
-        photos = [f for f in os.listdir(dog_dir) if f.endswith(".jpg")]
-        dog_folders[dog_name] = len(photos)
-
-        # Get the first photo or set to None if no photos exist
-        dog_previews[dog_name] = photos[0] if photos else None
+    for category, folder in categories.items():
+        photos = [f for f in os.listdir(folder) if f.endswith(".jpg")]
+        dog_folders[category] = len(photos)
+        dog_previews[category] = photos[0] if photos else None
 
     return render_template("index.html", dogs=dog_folders, previews=dog_previews)
 
