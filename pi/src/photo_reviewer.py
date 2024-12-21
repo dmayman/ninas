@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for
 import os
 from pathlib import Path
 from datetime import datetime, timedelta
+import pytz  # Import pytz for time zone handling
 
 # Determine the absolute path to the shared folder
 def find_repo_root(start_path):
@@ -54,13 +55,14 @@ def photos(category):
     photo_dir = valid_categories[category]
     photos = {}
 
-    # Current time for calculating relative timestamps
-    now = datetime.now()
+    # Use Los Angeles timezone
+    la_tz = pytz.timezone("America/Los_Angeles")
+    now = datetime.now(tz=la_tz)
 
     for photo in os.listdir(photo_dir):
         if photo.endswith(".jpg"):
             photo_path = photo_dir / photo
-            photo_time = datetime.fromtimestamp(photo_path.stat().st_mtime)
+            photo_time = datetime.fromtimestamp(photo_path.stat().st_mtime, tz=la_tz)  # Localize to LA timezone
 
             # Calculate relative time
             delta = now - photo_time
@@ -79,6 +81,7 @@ def photos(category):
             photos[photo] = {"relative": relative, "absolute": absolute}
 
     return render_template("photos.html", category=category, photos=photos)
+
 
 @app.route("/label/<photo>/<label>")
 def label_photo(photo, label):
