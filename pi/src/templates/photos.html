@@ -39,6 +39,8 @@
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             background: white;
+            text-align: center;
+            padding: 10px;
         }
 
         .photo-card img {
@@ -46,14 +48,19 @@
             width: 100%;
             height: auto;
             border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .photo-name {
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 10px;
+            word-wrap: break-word;
         }
 
         .button-group {
-            position: absolute;
-            bottom: 10px;
-            left: 50%;
-            transform: translateX(-50%);
             display: flex;
+            justify-content: center;
             gap: 10px;
         }
 
@@ -118,6 +125,7 @@
             {% for photo in photos %}
             <div class="photo-card">
                 <img src="{{ url_for('static', filename='training_photos/' + category + '/' + photo) }}" alt="{{ photo }}">
+                <div class="photo-name">{{ photo }}</div>
                 <div class="button-group">
                     <a href="/label/{{ photo }}/Mila" class="label-link">
                         <button class="action-button mila">Mila</button>
