@@ -2,7 +2,9 @@ from flask import Flask, render_template, request, redirect, url_for
 import os
 from pathlib import Path
 
-# Determine the absolute path to the shared photo directory
+app = Flask(__name__)
+
+# Determine the absolute path to the shared folder
 def find_repo_root(start_path):
     current_path = Path(start_path).resolve()
     while not (current_path / ".repo_root").exists():
@@ -12,52 +14,55 @@ def find_repo_root(start_path):
     return current_path
 
 repo_root = find_repo_root(__file__)
+photos_dir = repo_root / "static" / "training_photos"
+untagged_dir = photos_dir / "untagged"
+mila_dir = photos_dir / "Mila"
+nova_dir = photos_dir / "Nova"
 
-PHOTO_DIR = repo_root / "static" / "training_photos"
-
-
-# Initialize Flask
-app = Flask(__name__, static_folder=str(repo_root / "static"))
-
-# List of dog names
-DOGS = ["Mila", "Nova"]
+# Ensure directories exist
+for directory in [untagged_dir, mila_dir, nova_dir]:
+    directory.mkdir(parents=True, exist_ok=True)
 
 @app.route("/")
 def index():
-    dog_folders = {}
-    dog_previews = {}
+    return render_template("index.html")
 
-    for dog in DOGS:
-        photo_dir = PHOTO_DIR / dog
-        photos = [f for f in os.listdir(photo_dir) if f.endswith(".jpg")]
-        dog_folders[dog] = len(photos)
+@app.route("/photos/<category>")
+def photos(category):
+    if category not in ["Untagged", "Mila", "Nova"]:
+        return "Invalid category.", 404
 
-        # Get the first photo or set to None if no photos exist
-        dog_previews[dog] = photos[0] if photos else None
+    if category == "Untagged":
+        photo_dir = untagged_dir
+    elif category == "Mila":
+        photo_dir = mila_dir
+    elif category == "Nova":
+        photo_dir = nova_dir
 
-    return render_template("index.html", dogs=dog_folders, previews=dog_previews)
-
-@app.route("/photos/<dog>")
-def photos(dog):
-    if dog not in DOGS:
-        return "Invalid dog name.", 404
-    photo_dir = PHOTO_DIR / dog
     photos = [f for f in os.listdir(photo_dir) if f.endswith(".jpg")]
-    return render_template("photos.html", dog=dog, photos=photos)
+    return render_template("photos.html", category=category, photos=photos)
 
-@app.route("/delete/<dog>/<photo>")
-def delete_photo(dog, photo):
-    photo_path = PHOTO_DIR / dog / photo
-    if photo_path.exists():
-        photo_path.unlink()  # Delete the photo
-        print(f"Deleted: {photo_path}")
-    return redirect(url_for("photos", dog=dog))
+@app.route("/label/<photo>/<label>")
+def label_photo(photo, label):
+    if label not in ["Mila", "Nova"]:
+        return "Invalid label.", 404
+
+    src = untagged_dir / photo
+    if not src.exists():
+        return "Photo not found.", 404
+
+    dest = mila_dir / photo if label == "Mila" else nova_dir / photo
+    src.rename(dest)
+    return redirect(url_for("photos", category="Untagged"))
+
+@app.route("/delete/<photo>")
+def delete_photo(photo):
+    src = untagged_dir / photo
+    if not src.exists():
+        return "Photo not found.", 404
+
+    src.unlink()
+    return redirect(url_for("photos", category="Untagged"))
 
 if __name__ == "__main__":
-    # Ensure directories for each dog exist
-    PHOTO_DIR.mkdir(parents=True, exist_ok=True)
-    for dog in DOGS:
-        (PHOTO_DIR / dog).mkdir(parents=True, exist_ok=True)
-
-    # Run the Flask app
     app.run(host="0.0.0.0", port=5000)

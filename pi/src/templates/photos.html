@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ dog }} Photos</title>
+    <title>{{ category }} Photos</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -48,33 +48,53 @@
             border-radius: 8px;
         }
 
-        .delete-button {
+        .button-group {
             position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(255, 0, 0, 0.8);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            font-size: 18px;
-            font-weight: bold;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
             display: flex;
-            justify-content: center;
-            align-items: center;
+            gap: 10px;
+        }
+
+        .action-button {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
             cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            color: white;
         }
 
-        .delete-button:hover {
-            background: rgba(255, 0, 0, 1);
+        .action-button.mila {
+            background: #007BFF;
         }
 
-        a.delete-link {
+        .action-button.mila:hover {
+            background: #0056b3;
+        }
+
+        .action-button.nova {
+            background: #28a745;
+        }
+
+        .action-button.nova:hover {
+            background: #1e7e34;
+        }
+
+        .action-button.delete {
+            background: #dc3545;
+        }
+
+        .action-button.delete:hover {
+            background: #c82333;
+        }
+
+        a.delete-link, a.label-link {
             text-decoration: none;
         }
-        a.back{
+
+        a.back {
             font-family: Arial, Helvetica, sans-serif;
             text-decoration: none;
             font-size: 16px;
@@ -84,6 +104,7 @@
             background: #007BFF;
             transition: background-color 0.2s;
         }
+
         a.back:hover {
             background-color: #0056b3;
         }
@@ -91,15 +112,23 @@
 </head>
 <body>
     <div class="container">
-        <h1>Photos of {{ dog }}</h1>
-        <a class ="back" href="/">⬅️ Back to Home</a>
+        <h1>{{ category }} Photos</h1>
+        <a class="back" href="/">⬅️ Back to Home</a>
         <div class="photo-grid">
             {% for photo in photos %}
             <div class="photo-card">
-                <img src="{{ url_for('static', filename='training_photos/' + dog + '/' + photo) }}" alt="{{ photo }}">
-                <a href="/delete/{{ dog }}/{{ photo }}" class="delete-link">
-                    <button class="delete-button">&times;</button>
-                </a>
+                <img src="{{ url_for('static', filename='training_photos/' + category + '/' + photo) }}" alt="{{ photo }}">
+                <div class="button-group">
+                    <a href="/label/{{ photo }}/Mila" class="label-link">
+                        <button class="action-button mila">Mila</button>
+                    </a>
+                    <a href="/label/{{ photo }}/Nova" class="label-link">
+                        <button class="action-button nova">Nova</button>
+                    </a>
+                    <a href="/delete/{{ photo }}" class="delete-link">
+                        <button class="action-button delete">Delete</button>
+                    </a>
+                </div>
             </div>
             {% endfor %}
         </div>
