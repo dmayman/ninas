@@ -46,7 +46,7 @@ def index():
 
 @app.route("/photos/<category>")
 def photos(category):
-    valid_categories = {"Mila": mila_dir, "Nova": nova_dir, "Untagged": untagged_dir}
+    valid_categories = {"Mila": mila_dir, "Nova": nova_dir, "untagged": untagged_dir}
 
     if category not in valid_categories:
         return "Invalid category.", 404
