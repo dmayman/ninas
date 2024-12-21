@@ -5,7 +5,7 @@ from time import sleep
 from datetime import datetime
 
 # Configuration
-DETECTION_THRESHOLD = 35  # Threshold for detecting motion (adjustable)
+DETECTION_THRESHOLD = 15  # Threshold for detecting motion (adjustable)
 CAPTURE_DELAY = 1  # Delay between captures in seconds
 
 # Determine the absolute path to the shared folder
