@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for
 import os
 from pathlib import Path
+from datetime import datetime, timedelta
 
 # Determine the absolute path to the shared folder
 def find_repo_root(start_path):
@@ -45,17 +46,38 @@ def index():
 
 @app.route("/photos/<category>")
 def photos(category):
-    if category not in ["untagged", "Mila", "Nova"]:
+    valid_categories = {"Mila": mila_dir, "Nova": nova_dir, "Untagged": untagged_dir}
+
+    if category not in valid_categories:
         return "Invalid category.", 404
 
-    if category == "untagged":
-        photo_dir = untagged_dir
-    elif category == "Mila":
-        photo_dir = mila_dir
-    elif category == "Nova":
-        photo_dir = nova_dir
+    photo_dir = valid_categories[category]
+    photos = {}
 
-    photos = [f for f in os.listdir(photo_dir) if f.endswith(".jpg")]
+    # Current time for calculating relative timestamps
+    now = datetime.now()
+
+    for photo in os.listdir(photo_dir):
+        if photo.endswith(".jpg"):
+            photo_path = photo_dir / photo
+            photo_time = datetime.fromtimestamp(photo_path.stat().st_mtime)
+
+            # Calculate relative time
+            delta = now - photo_time
+            if delta < timedelta(minutes=1):
+                relative = f"{int(delta.total_seconds())}s ago"
+            elif delta < timedelta(hours=1):
+                relative = f"{int(delta.total_seconds() // 60)}m ago"
+            elif delta < timedelta(days=1):
+                relative = f"{int(delta.total_seconds() // 3600)}hr ago"
+            else:
+                relative = f"{int(delta.days)}d ago"
+
+            # Format absolute time
+            absolute = photo_time.strftime("%a %m/%d, %-I:%M%p")
+
+            photos[photo] = {"relative": relative, "absolute": absolute}
+
     return render_template("photos.html", category=category, photos=photos)
 
 @app.route("/label/<photo>/<label>")
