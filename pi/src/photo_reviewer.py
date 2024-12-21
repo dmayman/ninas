@@ -25,7 +25,14 @@ for directory in [untagged_dir, mila_dir, nova_dir]:
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    # Prepare the dogs dictionary
+    dog_folders = {}
+    for dog_dir in [mila_dir, nova_dir]:
+        dog_name = dog_dir.name
+        photo_count = len([f for f in os.listdir(dog_dir) if f.endswith(".jpg")])
+        dog_folders[dog_name] = photo_count
+
+    return render_template("index.html", dogs=dog_folders)
 
 @app.route("/photos/<category>")
 def photos(category):
