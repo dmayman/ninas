@@ -143,13 +143,13 @@
                     <div class="time-absolute">{{ timestamps.absolute }}</div>
                 </div>
                 <div class="button-group">
-                    <a href="/label/{{ photo }}/Mila" class="label-link">
+                    <a href="/label/{{ photo }}/Mila?src_category={{ category }}" class="label-link">
                         <button class="action-button mila">Mila</button>
                     </a>
-                    <a href="/label/{{ photo }}/Nova" class="label-link">
+                    <a href="/label/{{ photo }}/Nova?src_category={{ category }}" class="label-link">
                         <button class="action-button nova">Nova</button>
                     </a>
-                    <a href="/delete/{{ photo }}" class="delete-link">
+                    <a href="/delete/{{ photo }}?src_category={{ category }}" class="delete-link">
                         <button class="action-button delete">Delete</button>
                     </a>
                 </div>

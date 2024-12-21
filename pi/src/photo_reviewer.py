@@ -92,25 +92,42 @@ def photos(category):
 
 @app.route("/label/<photo>/<label>")
 def label_photo(photo, label):
-    if label not in ["Mila", "Nova"]:
-        return "Invalid label.", 404
+    valid_categories = {"Mila": mila_dir, "Nova": nova_dir, "untagged": untagged_dir}
 
-    src = untagged_dir / photo
+    # Determine the source folder based on the photo's current category
+    src_category = request.args.get("src_category")
+    if src_category not in valid_categories:
+        return "Invalid source category.", 404
+
+    src_dir = valid_categories[src_category]
+    src = src_dir / photo
+
     if not src.exists():
         return "Photo not found.", 404
 
-    dest = mila_dir / photo if label == "Mila" else nova_dir / photo
+    # Determine the destination folder
+    dest_dir = mila_dir if label == "Mila" else nova_dir
+    dest = dest_dir / photo
     src.rename(dest)
-    return redirect(url_for("photos", category="untagged"))
+    return redirect(url_for("photos", category=src_category))
 
 @app.route("/delete/<photo>")
 def delete_photo(photo):
-    src = untagged_dir / photo
+    valid_categories = {"Mila": mila_dir, "Nova": nova_dir, "untagged": untagged_dir}
+
+    # Determine the source folder based on the photo's current category
+    src_category = request.args.get("src_category")
+    if src_category not in valid_categories:
+        return "Invalid source category.", 404
+
+    src_dir = valid_categories[src_category]
+    src = src_dir / photo
+
     if not src.exists():
         return "Photo not found.", 404
 
     src.unlink()
-    return redirect(url_for("photos", category="untagged"))
+    return redirect(url_for("photos", category=src_category))
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)

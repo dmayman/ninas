@@ -69,7 +69,7 @@ try:
 
             # Use a timestamp for the photo filename
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S%f")
-            filename = untagged_dir / f"untagged_{timestamp}.jpg"
+            filename = untagged_dir / f"{timestamp}.jpg"
             cv2.imwrite(str(filename), frame)
             print(f"Image saved as {filename}")
 
