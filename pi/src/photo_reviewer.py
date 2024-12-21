@@ -59,7 +59,14 @@ def photos(category):
     la_tz = pytz.timezone("America/Los_Angeles")
     now = datetime.now(tz=la_tz)
 
-    for photo in os.listdir(photo_dir):
+    all_photos = [
+    (photo, datetime.fromtimestamp((photo_dir / photo).stat().st_mtime, tz=la_tz))
+    for photo in os.listdir(photo_dir) if photo.endswith(".jpg")
+    ]
+    sorted_photos = sorted(all_photos, key=lambda x: x[1], reverse=True)
+
+    for photo, photo_time in sorted_photos:
+    
         if photo.endswith(".jpg"):
             photo_path = photo_dir / photo
             photo_time = datetime.fromtimestamp(photo_path.stat().st_mtime, tz=la_tz)  # Localize to LA timezone
