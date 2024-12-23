@@ -24,17 +24,17 @@
         }
 
         .photo-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Responsive columns */
-        gap: 15px;
-        justify-items: left;
-        align-items: start;
-        margin-top: 40px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+            justify-items: center;
+            align-items: start;
+            margin-top: 40px;
         }
 
         .photo-card {
             position: relative;
-            width: 280px; /* Fixed width for cards to avoid jumpy layout */
+            width: 280px;
             overflow: hidden;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -43,90 +43,79 @@
             padding: 10px;
         }
 
+        .photo-card:hover .checkbox-container {
+            display: block;
+        }
+
         .photo-card img {
             display: block;
-            width: 100%; /* Scale image to fit the card's fixed width */
+            width: 100%;
             height: auto;
             border-radius: 8px;
             margin-bottom: 10px;
         }
 
-        .button-group {
+        .checkbox-container {
+            display: none;
+            position: absolute;
+            top: 10px;
+            left: 10px;
+        }
+
+        .checkbox-container input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .floating-menu {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            padding: 15px 20px;
+            border-radius: 8px;
             display: flex;
-            justify-content: center;
-            gap: 10px;
+            gap: 15px;
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
         }
 
-        .photo-timestamp .time-relative {
-            font-size: 14px;
-            color: #303030;
-            margin-bottom: 2px;
-        }
-        .photo-timestamp .time-absolute {
-            font-size: 12px;
-            color: #838383;
-        }
-        .photo-timestamp {
-            margin-bottom: 5px;
+        .floating-menu.visible {
+            visibility: visible;
+            opacity: 1;
         }
 
-        .photo-name {
-            font-size: 14px;
-            color: #555;
-            margin-bottom: 10px;
-            word-wrap: break-word;
-        }
-
-        .action-button {
-            padding: 5px 10px;
+        .menu-button {
+            padding: 10px 20px;
             border: none;
             border-radius: 4px;
-            font-size: 14px;
             cursor: pointer;
+            font-size: 14px;
+        }
+
+        .menu-button.mila {
+            background: #007BFF;
             color: white;
         }
 
-        .action-button.mila {
-            background: #007BFF;
-        }
-
-        .action-button.mila:hover {
-            background: #0056b3;
-        }
-
-        .action-button.nova {
+        .menu-button.nova {
             background: #28a745;
-        }
-
-        .action-button.nova:hover {
-            background: #1e7e34;
-        }
-
-        .action-button.delete {
-            background: #dc3545;
-        }
-
-        .action-button.delete:hover {
-            background: #c82333;
-        }
-
-        a.delete-link, a.label-link {
-            text-decoration: none;
-        }
-
-        a.back {
-            font-family: Arial, Helvetica, sans-serif;
-            text-decoration: none;
-            font-size: 16px;
-            padding: 12px 16px;
-            border-radius: 99px;
             color: white;
-            background: #007BFF;
-            transition: background-color 0.2s;
         }
 
-        a.back:hover {
-            background-color: #0056b3;
+        .menu-button.delete {
+            background: #dc3545;
+            color: white;
+        }
+
+        .menu-button.deselect {
+            background: #6c757d;
+            color: white;
         }
     </style>
 </head>
@@ -135,27 +124,87 @@
         <h1>{{ category }} Photos</h1>
         <a class="back" href="/">⬅️ Back to Home</a>
         <div class="photo-grid">
-            {% for photo, timestamps in photos.items() %}
-            <div class="photo-card">
+            {% for photo in photos %}
+            <div class="photo-card" data-photo="{{ photo }}">
+                <div class="checkbox-container">
+                    <input type="checkbox" class="photo-checkbox" data-photo="{{ photo }}">
+                </div>
                 <img src="{{ url_for('static', filename='training_photos/' + category + '/' + photo) }}" alt="{{ photo }}">
-                <div class="photo-timestamp">
-                    <div class="time-relative">{{ timestamps.relative }}</div>
-                    <div class="time-absolute">{{ timestamps.absolute }}</div>
-                </div>
-                <div class="button-group">
-                    <a href="/label/{{ photo }}/Mila?src_category={{ category }}" class="label-link">
-                        <button class="action-button mila">Mila</button>
-                    </a>
-                    <a href="/label/{{ photo }}/Nova?src_category={{ category }}" class="label-link">
-                        <button class="action-button nova">Nova</button>
-                    </a>
-                    <a href="/delete/{{ photo }}?src_category={{ category }}" class="delete-link">
-                        <button class="action-button delete">Delete</button>
-                    </a>
-                </div>
+                <div class="photo-name">{{ photo }}</div>
             </div>
             {% endfor %}
         </div>
     </div>
+
+    <div class="floating-menu" id="floating-menu">
+        <button class="menu-button deselect" id="deselect-all">Deselect All</button>
+        <button class="menu-button mila" id="assign-mila">Assign to Mila</button>
+        <button class="menu-button nova" id="assign-nova">Assign to Nova</button>
+        <button class="menu-button delete" id="delete-selected">Delete Selected</button>
+    </div>
+
+    <script>
+        const checkboxes = document.querySelectorAll('.photo-checkbox');
+        const floatingMenu = document.getElementById('floating-menu');
+        let lastChecked = null;
+
+        // Show the menu if at least one checkbox is checked
+        function updateMenuVisibility() {
+            const anyChecked = Array.from(checkboxes).some(cb => cb.checked);
+            floatingMenu.classList.toggle('visible', anyChecked);
+        }
+
+        // Deselect all checkboxes
+        document.getElementById('deselect-all').addEventListener('click', () => {
+            checkboxes.forEach(cb => cb.checked = false);
+            updateMenuVisibility();
+        });
+
+        // Handle batch actions
+        document.getElementById('assign-mila').addEventListener('click', () => {
+            batchAction('Mila');
+        });
+
+        document.getElementById('assign-nova').addEventListener('click', () => {
+            batchAction('Nova');
+        });
+
+        document.getElementById('delete-selected').addEventListener('click', () => {
+            batchAction('delete');
+        });
+
+        function batchAction(action) {
+            const selectedPhotos = Array.from(checkboxes)
+                .filter(cb => cb.checked)
+                .map(cb => cb.dataset.photo);
+
+            fetch(`/batch_action`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action, photos: selectedPhotos, category: "{{ category }}" })
+            }).then(() => {
+                location.reload();
+            });
+        }
+
+        // Handle shift-click for range selection
+        checkboxes.forEach(cb => {
+            cb.addEventListener('click', (e) => {
+                if (e.shiftKey && lastChecked) {
+                    let inBetween = false;
+                    checkboxes.forEach(box => {
+                        if (box === cb || box === lastChecked) {
+                            inBetween = !inBetween;
+                        }
+                        if (inBetween) {
+                            box.checked = true;
+                        }
+                    });
+                }
+                lastChecked = cb;
+                updateMenuVisibility();
+            });
+        });
+    </script>
 </body>
 </html>

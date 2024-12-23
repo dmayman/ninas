@@ -111,6 +111,33 @@ def label_photo(photo, label):
     src.rename(dest)
     return redirect(url_for("photos", category=src_category))
 
+@app.route("/batch_action", methods=["POST"])
+def batch_action():
+    data = request.get_json()
+    action = data.get("action")
+    photos = data.get("photos", [])
+    category = data.get("category")
+
+    valid_categories = {"Mila": mila_dir, "Nova": nova_dir, "untagged": untagged_dir}
+    if category not in valid_categories:
+        return "Invalid category", 400
+
+    src_dir = valid_categories[category]
+
+    for photo in photos:
+        src = src_dir / photo
+        if not src.exists():
+            continue
+
+        if action == "delete":
+            src.unlink()
+        elif action in ["Mila", "Nova"]:
+            dest_dir = mila_dir if action == "Mila" else nova_dir
+            dest = dest_dir / photo
+            src.rename(dest)
+
+    return "OK", 200
+
 @app.route("/delete/<photo>")
 def delete_photo(photo):
     valid_categories = {"Mila": mila_dir, "Nova": nova_dir, "untagged": untagged_dir}
