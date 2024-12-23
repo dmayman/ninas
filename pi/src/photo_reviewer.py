@@ -152,5 +152,43 @@ def delete_photo(photo):
     src.unlink()
     return redirect(url_for("photos", category=src_category))
 
+@app.route("/review_duplicates/<category>/<photo>")
+def review_duplicates(category, photo):
+    from imagehash import phash
+    from PIL import Image
+
+    # Directory for the current category
+    valid_categories = {"Mila": mila_dir, "Nova": nova_dir, "None": none_dir, "untagged": untagged_dir}
+    if category not in valid_categories:
+        return "Invalid category.", 404
+
+    photo_dir = valid_categories[category]
+    target_photo_path = photo_dir / photo
+
+    if not target_photo_path.exists():
+        return "Photo not found.", 404
+
+    # Calculate hash for the target photo
+    target_hash = phash(Image.open(target_photo_path))
+
+    # Compare target photo hash with others in the category
+    duplicates = []
+    for other_photo in photo_dir.iterdir():
+        if other_photo.name == photo or not other_photo.name.endswith(".jpg"):
+            continue
+        other_hash = phash(Image.open(other_photo))
+        distance = target_hash - other_hash
+        duplicates.append({"photo": other_photo.name, "distance": distance})
+
+    # Sort duplicates by hash distance
+    duplicates = sorted(duplicates, key=lambda x: x["distance"])
+
+    return render_template(
+        "review_duplicates.html",
+        category=category,
+        target_photo=photo,
+        duplicates=duplicates
+    )
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)

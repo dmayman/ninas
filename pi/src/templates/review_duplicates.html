@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ category }} Photos</title>
+    <title>Review Duplicates</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -13,14 +13,14 @@
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
         }
 
-        h1 {
+        .target-photo {
             text-align: center;
-            color: #333;
+            margin-bottom: 40px;
         }
 
         .photo-grid {
@@ -29,7 +29,6 @@
             gap: 15px;
             justify-items: center;
             align-items: start;
-            margin-top: 40px;
         }
 
         .photo-card {
@@ -43,11 +42,6 @@
             padding: 10px;
         }
 
-        .photo-card:hover .checkbox-container,
-        .photo-card .checkbox-container:has(input[type="checkbox"]:checked) {
-            display: block;
-        }
-
         .photo-card img {
             display: block;
             width: 100%;
@@ -56,8 +50,13 @@
             margin-bottom: 10px;
         }
 
+        .photo-timestamp {
+            font-size: 14px;
+            color: #777;
+            margin-top: 10px;
+        }
+
         .checkbox-container {
-            display: none;
             position: absolute;
             top: 10px;
             left: 10px;
@@ -99,103 +98,33 @@
             font-size: 14px;
         }
 
-        .menu-button.mila {
-            background: #007BFF;
-            color: white;
-        }
-
-        .menu-button.nova {
-            background: #28a745;
-            color: white;
-        }
-
-        .menu-button.none {
-            background: #6c757d;
-            color: white;
-        }
-
-        .menu-button.none:hover {
-            background: #5a6268;
-        }
-
         .menu-button.delete {
             background: #dc3545;
             color: white;
         }
-
-        .menu-button.deselect {
-            background: #6c757d;
-            color: white;
-        }
-
-        .photo-timestamp .time-relative {
-            font-size: 14px;
-            color: #303030;
-            margin-bottom: 2px;
-        }
-
-        .photo-timestamp .time-absolute {
-            font-size: 12px;
-            color: #838383;
-        }
-
-        .photo-timestamp {
-            margin-bottom: 5px;
-        }
-
-        .photo-name {
-            font-size: 14px;
-            color: #555;
-            margin-bottom: 10px;
-            word-wrap: break-word;
-        }
-        .review-duplicates {
-        display: none;
-        position: absolute;
-        bottom: 10px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: #007BFF;
-        color: white;
-        padding: 5px 10px;
-        border-radius: 4px;
-        text-align: center;
-        cursor: pointer;
-    }
-
-    .photo-card:hover .review-duplicates {
-        display: block;
-    }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>{{ category }} Photos</h1>
-        <a class="back" href="/">⬅️ Back to Home</a>
+        <h1>Review Duplicates</h1>
+        <div class="target-photo">
+            <img src="{{ url_for('static', filename='training_photos/' + category + '/' + target_photo) }}" alt="Target Photo">
+            <p>Target Photo</p>
+        </div>
         <div class="photo-grid">
-            {% for photo, timestamps in photos.items() %}
-            <div class="photo-card" data-photo="{{ photo }}">
+            {% for duplicate in duplicates %}
+            <div class="photo-card" data-photo="{{ duplicate.photo }}">
                 <div class="checkbox-container">
-                    <input type="checkbox" class="photo-checkbox" data-photo="{{ photo }}">
+                    <input type="checkbox" class="photo-checkbox" data-photo="{{ duplicate.photo }}">
                 </div>
-                <img src="{{ url_for('static', filename='training_photos/' + category + '/' + photo) }}" alt="{{ photo }}">
-                <div class="photo-timestamp">
-                    <div class="time-relative">{{ timestamps.relative }}</div>
-                    <div class="time-absolute">{{ timestamps.absolute }}</div>
-                </div>
-                <div class="review-duplicates">
-                    <a href="/review_duplicates/{{ category }}/{{ photo }}">Review Duplicates</a>
-                </div>
+                <img src="{{ url_for('static', filename='training_photos/' + category + '/' + duplicate.photo) }}" alt="{{ duplicate.photo }}">
+                <div class="photo-timestamp">Distance: {{ duplicate.distance }}</div>
             </div>
             {% endfor %}
         </div>
     </div>
 
     <div class="floating-menu" id="floating-menu">
-        <button class="menu-button deselect" id="deselect-all">Deselect All</button>
-        <button class="menu-button mila" id="assign-mila">Assign to Mila</button>
-        <button class="menu-button nova" id="assign-nova">Assign to Nova</button>
-        <button class="menu-button none" id="assign-none">Assign to None</button>
         <button class="menu-button delete" id="delete-selected">Delete Selected</button>
     </div>
 
@@ -204,36 +133,12 @@
         const floatingMenu = document.getElementById('floating-menu');
         let lastChecked = null;
 
-        // Show the menu if at least one checkbox is checked
         function updateMenuVisibility() {
             const anyChecked = Array.from(checkboxes).some(cb => cb.checked);
             floatingMenu.classList.toggle('visible', anyChecked);
         }
 
-        // Deselect all checkboxes
-        document.getElementById('deselect-all').addEventListener('click', () => {
-            checkboxes.forEach(cb => cb.checked = false);
-            updateMenuVisibility();
-        });
-
-        // Handle batch actions
-        document.getElementById('assign-mila').addEventListener('click', () => {
-            batchAction('Mila');
-        });
-
-        document.getElementById('assign-nova').addEventListener('click', () => {
-            batchAction('Nova');
-        });
-
-        document.getElementById('assign-none').addEventListener('click', () => {
-            batchAction('None');
-        });
-
         document.getElementById('delete-selected').addEventListener('click', () => {
-            batchAction('delete');
-        });
-
-        function batchAction(action) {
             const selectedPhotos = Array.from(checkboxes)
                 .filter(cb => cb.checked)
                 .map(cb => cb.dataset.photo);
@@ -241,13 +146,12 @@
             fetch(`/batch_action`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action, photos: selectedPhotos, category: "{{ category }}" })
+                body: JSON.stringify({ action: "delete", photos: selectedPhotos, category: "{{ category }}" })
             }).then(() => {
                 location.reload();
             });
-        }
+        });
 
-        // Handle shift-click for range selection
         checkboxes.forEach(cb => {
             cb.addEventListener('click', (e) => {
                 if (e.shiftKey && lastChecked) {
