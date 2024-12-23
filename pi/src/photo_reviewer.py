@@ -18,9 +18,10 @@ photos_dir = repo_root / "static" / "training_photos"
 untagged_dir = photos_dir / "untagged"
 mila_dir = photos_dir / "Mila"
 nova_dir = photos_dir / "Nova"
+none_dir = photos_dir / "None"  # New "None" category
 
 # Ensure directories exist
-for directory in [untagged_dir, mila_dir, nova_dir]:
+for directory in [untagged_dir, mila_dir, nova_dir, none_dir]:
     directory.mkdir(parents=True, exist_ok=True)
 
 # Initialize Flask
@@ -32,7 +33,8 @@ def index():
     categories = {
         "Mila": mila_dir,
         "Nova": nova_dir,
-        "untagged": untagged_dir
+        "None": none_dir,
+        "untagged": untagged_dir,
     }
 
     dog_folders = {}
@@ -47,7 +49,7 @@ def index():
 
 @app.route("/photos/<category>")
 def photos(category):
-    valid_categories = {"Mila": mila_dir, "Nova": nova_dir, "untagged": untagged_dir}
+    valid_categories = {"Mila": mila_dir, "Nova": nova_dir, "None": none_dir, "untagged": untagged_dir}
 
     if category not in valid_categories:
         return "Invalid category.", 404
@@ -60,39 +62,33 @@ def photos(category):
     now = datetime.now(tz=la_tz)
 
     all_photos = [
-    (photo, datetime.fromtimestamp((photo_dir / photo).stat().st_mtime, tz=la_tz))
-    for photo in os.listdir(photo_dir) if photo.endswith(".jpg")
+        (photo, datetime.fromtimestamp((photo_dir / photo).stat().st_mtime, tz=la_tz))
+        for photo in os.listdir(photo_dir) if photo.endswith(".jpg")
     ]
     sorted_photos = sorted(all_photos, key=lambda x: x[1], reverse=True)
 
     for photo, photo_time in sorted_photos:
-    
-        if photo.endswith(".jpg"):
-            photo_path = photo_dir / photo
-            photo_time = datetime.fromtimestamp(photo_path.stat().st_mtime, tz=la_tz)  # Localize to LA timezone
+        # Calculate relative time
+        delta = now - photo_time
+        if delta < timedelta(minutes=1):
+            relative = f"{int(delta.total_seconds())}s ago"
+        elif delta < timedelta(hours=1):
+            relative = f"{int(delta.total_seconds() // 60)}m ago"
+        elif delta < timedelta(days=1):
+            relative = f"{int(delta.total_seconds() // 3600)}hr ago"
+        else:
+            relative = f"{int(delta.days)}d ago"
 
-            # Calculate relative time
-            delta = now - photo_time
-            if delta < timedelta(minutes=1):
-                relative = f"{int(delta.total_seconds())}s ago"
-            elif delta < timedelta(hours=1):
-                relative = f"{int(delta.total_seconds() // 60)}m ago"
-            elif delta < timedelta(days=1):
-                relative = f"{int(delta.total_seconds() // 3600)}hr ago"
-            else:
-                relative = f"{int(delta.days)}d ago"
+        # Format absolute time
+        absolute = photo_time.strftime("%a %m/%d, %-I:%M%p")
 
-            # Format absolute time
-            absolute = photo_time.strftime("%a %m/%d, %-I:%M%p")
-
-            photos[photo] = {"relative": relative, "absolute": absolute}
+        photos[photo] = {"relative": relative, "absolute": absolute}
 
     return render_template("photos.html", category=category, photos=photos)
 
-
 @app.route("/label/<photo>/<label>")
 def label_photo(photo, label):
-    valid_categories = {"Mila": mila_dir, "Nova": nova_dir, "untagged": untagged_dir}
+    valid_categories = {"Mila": mila_dir, "Nova": nova_dir, "None": none_dir, "untagged": untagged_dir}
 
     # Determine the source folder based on the photo's current category
     src_category = request.args.get("src_category")
@@ -106,7 +102,7 @@ def label_photo(photo, label):
         return "Photo not found.", 404
 
     # Determine the destination folder
-    dest_dir = mila_dir if label == "Mila" else nova_dir
+    dest_dir = valid_categories[label]
     dest = dest_dir / photo
     src.rename(dest)
     return redirect(url_for("photos", category=src_category))
@@ -118,7 +114,7 @@ def batch_action():
     photos = data.get("photos", [])
     category = data.get("category")
 
-    valid_categories = {"Mila": mila_dir, "Nova": nova_dir, "untagged": untagged_dir}
+    valid_categories = {"Mila": mila_dir, "Nova": nova_dir, "None": none_dir, "untagged": untagged_dir}
     if category not in valid_categories:
         return "Invalid category", 400
 
@@ -131,8 +127,8 @@ def batch_action():
 
         if action == "delete":
             src.unlink()
-        elif action in ["Mila", "Nova"]:
-            dest_dir = mila_dir if action == "Mila" else nova_dir
+        elif action in ["Mila", "Nova", "None"]:
+            dest_dir = valid_categories[action]
             dest = dest_dir / photo
             src.rename(dest)
 
@@ -140,7 +136,7 @@ def batch_action():
 
 @app.route("/delete/<photo>")
 def delete_photo(photo):
-    valid_categories = {"Mila": mila_dir, "Nova": nova_dir, "untagged": untagged_dir}
+    valid_categories = {"Mila": mila_dir, "Nova": nova_dir, "None": none_dir, "untagged": untagged_dir}
 
     # Determine the source folder based on the photo's current category
     src_category = request.args.get("src_category")

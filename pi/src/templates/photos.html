@@ -109,6 +109,15 @@
             color: white;
         }
 
+        .menu-button.none {
+            background: #6c757d;
+            color: white;
+        }
+
+        .menu-button.none:hover {
+            background: #5a6268;
+        }
+
         .menu-button.delete {
             background: #dc3545;
             color: white;
@@ -124,10 +133,12 @@
             color: #303030;
             margin-bottom: 2px;
         }
+
         .photo-timestamp .time-absolute {
             font-size: 12px;
             color: #838383;
         }
+
         .photo-timestamp {
             margin-bottom: 5px;
         }
@@ -164,6 +175,7 @@
         <button class="menu-button deselect" id="deselect-all">Deselect All</button>
         <button class="menu-button mila" id="assign-mila">Assign to Mila</button>
         <button class="menu-button nova" id="assign-nova">Assign to Nova</button>
+        <button class="menu-button none" id="assign-none">Assign to None</button>
         <button class="menu-button delete" id="delete-selected">Delete Selected</button>
     </div>
 
@@ -191,6 +203,10 @@
 
         document.getElementById('assign-nova').addEventListener('click', () => {
             batchAction('Nova');
+        });
+
+        document.getElementById('assign-none').addEventListener('click', () => {
+            batchAction('None');
         });
 
         document.getElementById('delete-selected').addEventListener('click', () => {
