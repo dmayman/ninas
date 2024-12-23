@@ -150,17 +150,21 @@
             word-wrap: break-word;
         }
         .review-duplicates {
-        display: none;
-        position: absolute;
-        bottom: 10px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: #007BFF;
-        color: white;
-        padding: 5px 10px;
-        border-radius: 4px;
-        text-align: center;
-        cursor: pointer;
+            display: none;
+            position: absolute;
+            left: 50%;
+            transform: translate(-50%, -92px);
+            background: white;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            text-align: center;
+            cursor: pointer;
+            width: 50%;
+            padding: 8px;
+            box-shadow: rgba(0, 0, 0, .3) 0px 0px 8px;
+            text-decoration: none;
+            color: black;
     }
 
     .photo-card:hover .review-duplicates {
@@ -183,9 +187,7 @@
                     <div class="time-relative">{{ timestamps.relative }}</div>
                     <div class="time-absolute">{{ timestamps.absolute }}</div>
                 </div>
-                <div class="review-duplicates">
-                    <a href="/review_duplicates/{{ category }}/{{ photo }}">Review Duplicates</a>
-                </div>
+                <a class="review-duplicates" href="/review_duplicates/{{ category }}/{{ photo }}">Review Duplicates</a>
             </div>
             {% endfor %}
         </div>
