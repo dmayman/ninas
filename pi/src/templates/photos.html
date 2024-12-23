@@ -152,8 +152,8 @@
                 </div>
                 <img src="{{ url_for('static', filename='training_photos/' + category + '/' + photo) }}" alt="{{ photo }}">
                 <div class="photo-timestamp">
-                    <div class="timestamp-relative">{{ timestamps.relative }}</div>
-                    <div class="timestamp-absolute">{{ timestamps.absolute }}</div>
+                    <div class="time-relative">{{ timestamps.relative }}</div>
+                    <div class="time-absolute">{{ timestamps.absolute }}</div>
                 </div>
             </div>
             {% endfor %}
