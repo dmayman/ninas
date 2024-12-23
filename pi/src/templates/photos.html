@@ -119,9 +119,16 @@
             color: white;
         }
 
-        .photo-timestamp {
+        .photo-timestamp .time-relative {
+            font-size: 14px;
+            color: #303030;
+            margin-bottom: 2px;
+        }
+        .photo-timestamp .time-absolute {
             font-size: 12px;
-            color: #777;
+            color: #838383;
+        }
+        .photo-timestamp {
             margin-bottom: 5px;
         }
 
@@ -145,10 +152,9 @@
                 </div>
                 <img src="{{ url_for('static', filename='training_photos/' + category + '/' + photo) }}" alt="{{ photo }}">
                 <div class="photo-timestamp">
-                    <div>{{ timestamps.relative }}</div>
-                    <div>{{ timestamps.absolute }}</div>
+                    <div class="timestamp-relative">{{ timestamps.relative }}</div>
+                    <div class="timestamp-absolute">{{ timestamps.absolute }}</div>
                 </div>
-                <div class="photo-name">{{ photo }}</div>
             </div>
             {% endfor %}
         </div>
