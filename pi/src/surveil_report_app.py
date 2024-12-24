@@ -4,12 +4,23 @@ import json
 from datetime import datetime, timedelta
 import pytz
 
+# Determine the absolute path to the shared folder
+def find_repo_root(start_path):
+    current_path = Path(start_path).resolve()
+    while not (current_path / ".repo_root").exists():
+        if current_path.parent == current_path:
+            raise FileNotFoundError("Could not locate repo root marker (.repo_root)")
+        current_path = current_path.parent
+    return current_path
+
+repo_root = find_repo_root(__file__)
+
 # Configuration
 JSON_REPORT_PATH = "report/report.json"
 REPORT_DATA_DIR = "report/report-data"
 
 # Flask App
-app = Flask(__name__)
+app = Flask(__name__, static_folder=str(repo_root / "pi" / "src" / REPORT_DATA_DIR))
 
 def load_reports():
     """
@@ -58,4 +69,4 @@ def index():
     return render_template("index.html", reports=reports)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)
