@@ -4,6 +4,7 @@ import cv2
 import json
 import datetime
 import tflite_runtime.interpreter as tflite
+import numpy as np
 
 # Configuration Variables
 CONFIDENCE_THRESHOLD = 95  # Confidence in percentage
