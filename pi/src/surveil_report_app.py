@@ -66,7 +66,7 @@ def index():
     Displays the surveillance reports with relative and absolute timestamps.
     """
     reports = load_reports()
-    return render_template("index.html", reports=reports)
+    return render_template("surveil_report.html", reports=reports)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
