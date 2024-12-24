@@ -5,6 +5,7 @@ import json
 import datetime
 import tflite_runtime.interpreter as tflite
 import numpy as np
+import subprocess
 
 # Configuration Variables
 CONFIDENCE_THRESHOLD = 95  # Confidence in percentage
@@ -15,7 +16,7 @@ JSON_REPORT_PATH = "report/report.json"
 REPORT_DATA_DIR = "report/report-data"
 
 # Load TensorFlow Lite model
-interpreter = tflite.Interpreter(model_path="dog_classifier_model_v1.tflite")
+interpreter = tflite.Interpreter(model_path="dog_singular_model.tflite")
 interpreter.allocate_tensors()
 input_details = interpreter.get_input_details()
 output_details = interpreter.get_output_details()
@@ -27,18 +28,12 @@ class_labels = ["Mila", "Nova", "None"]
 os.makedirs(REPORT_DATA_DIR, exist_ok=True)
 
 def preprocess_frame(frame, input_size):
-    """
-    Preprocesses a frame for TensorFlow Lite model inference.
-    """
     img = cv2.resize(frame, input_size)
     img = img.astype(np.float32) / 255.0
     return np.expand_dims(img, axis=0)
 
 def analyze_frame(frame):
-    """
-    Runs the TensorFlow Lite model on a single frame.
-    """
-    input_size = (212, 212)  # Match model input size
+    input_size = (128, 128)
     processed_frame = preprocess_frame(frame, input_size)
     interpreter.set_tensor(input_details[0]['index'], processed_frame)
     interpreter.invoke()
@@ -48,9 +43,6 @@ def analyze_frame(frame):
     return class_labels[predicted_class], confidence
 
 def detect_motion(prev_frame, curr_frame):
-    """
-    Detects motion by comparing two frames.
-    """
     diff = cv2.absdiff(prev_frame, curr_frame)
     gray = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
     _, thresh = cv2.threshold(gray, 25, 255, cv2.THRESH_BINARY)
@@ -58,9 +50,6 @@ def detect_motion(prev_frame, curr_frame):
     return motion_area > MOTION_THRESHOLD
 
 def append_to_json(file_path, data):
-    """
-    Appends data to a JSON file atomically.
-    """
     if not os.path.exists(file_path):
         with open(file_path, "w") as f:
             json.dump([], f)
@@ -75,10 +64,20 @@ def append_to_json(file_path, data):
         json.dump(reports, f, indent=4)
     os.replace(temp_path, file_path)
 
+def start_web_app():
+    """
+    Starts the web app as a separate process.
+    """
+    subprocess.Popen(["python3", "surveil_report_app.py"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    print("Web app started.")
+
 def main():
     """
     Main function to detect motion and analyze frames.
     """
+    # Start the web app
+    start_web_app()
+
     cap = cv2.VideoCapture(0)  # Use camera 0
     _, prev_frame = cap.read()
 
@@ -88,7 +87,7 @@ def main():
             print("Motion detected! Analyzing frames...")
             captured_frames = []
             for i in range(NUM_FRAMES):
-                time.sleep(MOTION_DELAY_MS / 1000.0)  # Small delay between frames
+                time.sleep(MOTION_DELAY_MS / 1000.0)
                 _, frame = cap.read()
                 captured_frames.append(frame)
 
@@ -99,25 +98,19 @@ def main():
                     results.append((dog, confidence, frame))
 
             if len(results) == NUM_FRAMES:
-                consistent_dog = results[0][0]  # Check if all predictions are consistent
+                consistent_dog = results[0][0]
                 if all(result[0] == consistent_dog for result in results):
-                    timestamp = datetime.datetime.now()
-                    timestamp_readable = timestamp.strftime("%b %d %Y, %I:%M%p")
-                    timestamp_relative = f"{int(time.time() - timestamp.timestamp()) // 60}m ago"
-
+                    timestamp = int(time.time())
                     print(f"Consistent detection of {consistent_dog} with {NUM_FRAMES} frames.")
-                    
+
                     report = {
                         "dog": consistent_dog,
-                        "timestamp": {
-                            "absolute": timestamp_readable,
-                            "relative": timestamp_relative,
-                        },
+                        "timestamp": timestamp,
                         "frames": []
                     }
 
                     for i, (dog, confidence, frame) in enumerate(results):
-                        filename = os.path.join(REPORT_DATA_DIR, f"{consistent_dog}_{timestamp.strftime('%Y%m%d_%H%M%S')}_{i}.jpg")
+                        filename = os.path.join(REPORT_DATA_DIR, f"{consistent_dog}_{timestamp}_{i}.jpg")
                         cv2.imwrite(filename, frame)
                         report["frames"].append({
                             "filename": filename,

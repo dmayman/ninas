@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surveillance Reports</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .report { margin-bottom: 20px; }
+        .timestamp { font-size: 0.9em; color: gray; }
+        .images { display: flex; flex-wrap: wrap; gap: 10px; }
+        .image { text-align: center; }
+        img { max-width: 200px; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+    <h1>Surveillance Reports</h1>
+    {% for report in reports %}
+        <div class="report">
+            <h2>{{ report.dog }}</h2>
+            <div class="timestamp">
+                Absolute: {{ report.timestamp_absolute }} <br>
+                Relative: {{ report.timestamp_relative }}
+            </div>
+            <div class="images">
+                {% for frame in report.frames %}
+                    <div class="image">
+                        <img src="{{ frame.filename }}" alt="{{ frame.filename }}">
+                        <p>Confidence: {{ frame.confidence | round(2) }}%</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endfor %}
+</body>
+</html>
