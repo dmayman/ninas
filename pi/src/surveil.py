@@ -68,8 +68,21 @@ def start_web_app():
     """
     Starts the web app as a separate process.
     """
-    subprocess.Popen(["python3", "surveil_report_app.py"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    print("Web app starting...")
+    web_app_path = os.path.abspath("surveil_report_app.py")  # Ensure absolute path
+    python_path = os.environ.get("PYTHON_PATH", "python3")  # Use system Python by default
+
+    try:
+        subprocess.Popen(
+            [python_path, web_app_path],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            cwd=os.path.dirname(web_app_path)  # Ensure correct working directory
+        )
+        print("Web app starting...")
+    except FileNotFoundError as e:
+        print(f"Error: Could not find {web_app_path}. Make sure the file exists.")
+    except Exception as e:
+        print(f"Error starting the web app: {e}")
 
 def main():
     """
