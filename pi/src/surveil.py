@@ -69,7 +69,7 @@ def start_web_app():
     Starts the web app as a separate process.
     """
     subprocess.Popen(["python3", "surveil_report_app.py"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    print("Web app started.")
+    print("Web app starting...")
 
 def main():
     """
