@@ -1,8 +1,8 @@
-from flask import Flask, render_template, request, redirect, url_for
 import os
+import time
 import numpy as np
 import cv2
-import tensorflow as tf 
+import tensorflow as tf
 
 # Load the TensorFlow Lite model
 interpreter = tf.lite.Interpreter(model_path="dog_classifier_model_v1.tflite")
@@ -15,23 +15,15 @@ output_details = interpreter.get_output_details()
 # Class labels
 class_labels = ["Mila", "Nova", "None"]
 
-# Folder containing test images
-TEST_FOLDER = "test_photos/test-set-2a"
-
-# Create the Flask app
-app = Flask(__name__, static_folder=str(TEST_FOLDER))
-app.config["TEST_FOLDER"] = TEST_FOLDER
-
 def preprocess_image(image_path, input_size):
     """
     Preprocesses the input image to match the model's requirements.
     """
-    # Load the image    
     img = cv2.imread(image_path)
     if img is None:
         raise ValueError(f"Image not found at {image_path}")
     
-    # Resize the image
+    # Resize the image to match the model's input size
     img = cv2.resize(img, input_size)
 
     # Normalize pixel values to [0, 1]
@@ -52,8 +44,10 @@ def evaluate_image(image_path):
     # Set the input tensor
     interpreter.set_tensor(input_details[0]['index'], img)
 
-    # Run inference
+    # Measure inference time
+    start_time = time.time()
     interpreter.invoke()
+    inference_time = time.time() - start_time
 
     # Get the predictions
     predictions = interpreter.get_tensor(output_details[0]['index'])[0]
@@ -64,31 +58,33 @@ def evaluate_image(image_path):
 
     return {
         "class": class_labels[predicted_class],
-        "confidence": confidence * 100
+        "confidence": confidence * 100,
+        "time": inference_time
     }
 
-@app.route("/")
-def index():
+def main():
     """
-    Displays the images in the test folder grouped by predicted class.
+    Main function to prompt the user for an image path and evaluate it.
     """
-    grouped_images = {label: [] for label in class_labels}  # Group images by class
-    test_folder_path = os.path.join(app.config["TEST_FOLDER"])
+    while True:
+        image_path = input("Enter the relative path to the image (or 'exit' to quit): ").strip()
+        if image_path.lower() == "exit":
+            print("Exiting...")
+            break
 
-    for filename in os.listdir(test_folder_path):
-        if filename.lower().endswith((".jpg", ".jpeg", ".png")):
-            image_path = os.path.join(test_folder_path, filename)
+        # Check if the file exists
+        if not os.path.isfile(image_path):
+            print(f"Error: File not found at {image_path}. Please try again.")
+            continue
 
-            try:
-                result = evaluate_image(image_path)
-                grouped_images[result["class"]].append({
-                    "filename": filename,
-                    "confidence": result["confidence"]
-                })
-            except Exception as e:
-                print(f"Error processing {filename}: {e}")
-
-    return render_template("evaluate.html", grouped_images=grouped_images, folder=TEST_FOLDER)
+        try:
+            # Evaluate the image
+            result = evaluate_image(image_path)
+            print(f"Class: {result['class']}")
+            print(f"Confidence: {result['confidence']:.2f}%")
+            print(f"Time Spent Evaluating: {result['time']:.4f} seconds")
+        except Exception as e:
+            print(f"Error: {e}")
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    main()
