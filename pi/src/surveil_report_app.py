@@ -61,6 +61,13 @@ def load_reports():
 
     return reports
 
+# Define a route to serve files from the desired directory
+@app.route("/images/<path:filename>")
+def report_images(filename):
+    # Replace 'path/to/your/folder' with the directory containing your images
+    directory = str(repo_root / "pi" / "src" / REPORT_DATA_DIR)
+    return send_from_directory(directory, filename)
+
 @app.route("/")
 def index():
     """

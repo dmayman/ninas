@@ -25,7 +25,7 @@
             <div class="images">
                 {% for frame in report.frames %}
                     <div class="image">
-                        <img src="{{ frame.filename }}" alt="{{ frame.filename }}">
+                        <img src="{{ url_for('report_images', filename=frame.filename) }}" alt="frame.filename">
                         <p>Confidence: {{ frame.confidence | round(2) }}%</p>
                     </div>
                 {% endfor %}
