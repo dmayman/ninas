@@ -3,6 +3,7 @@ import os
 import json
 from datetime import datetime, timedelta
 import pytz
+from pathlib import Path
 
 # Determine the absolute path to the shared folder
 def find_repo_root(start_path):
@@ -69,5 +70,6 @@ def index():
     return render_template("surveil_report.html", reports=reports)
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
     print("Web app started.")
+    app.run(host="0.0.0.0", port=5000, debug=True)
+    
