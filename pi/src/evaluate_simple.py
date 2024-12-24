@@ -2,10 +2,10 @@ import os
 import time
 import numpy as np
 import cv2
-import tensorflow as tf
+import tflite_runtime.interpreter as tflite
 
 # Load the TensorFlow Lite model
-interpreter = tf.lite.Interpreter(model_path="dog_classifier_model_v1.tflite")
+interpreter = tflite.Interpreter(model_path="dog_classifier_model_v1.tflite")
 interpreter.allocate_tensors()
 
 # Get input and output details
