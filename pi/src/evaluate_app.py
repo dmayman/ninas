@@ -5,7 +5,7 @@ import cv2
 import tflite_runtime.interpreter as tflite
 
 # Load the TensorFlow Lite model
-interpreter = tf.lite.Interpreter(model_path="dog_singular_model.tflite")
+interpreter = tflite.Interpreter(model_path="dog_singular_model.tflite")
 interpreter.allocate_tensors()
 
 # Get input and output details
