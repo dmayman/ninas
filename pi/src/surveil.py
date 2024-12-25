@@ -111,7 +111,8 @@ def main():
                 if confidence < CONFIDENCE_THRESHOLD:
                     print(f"Frame {i + 1}: Confidence {confidence:.2f}% below threshold {CONFIDENCE_THRESHOLD}%.")
                     break
-
+                
+                results = []
                 # Append frame only if it passes the confidence threshold
                 if i == 0:  # First frame must pass the threshold
                     results = [(dog, confidence, frame)]
