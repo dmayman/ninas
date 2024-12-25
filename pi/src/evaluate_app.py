@@ -55,8 +55,8 @@ def evaluate_image(image_path):
     # Run inference
     interpreter.invoke()
 
-    # Get the predictions
-    predictions = interpreter.get_tensor(output_details[0]['index'])[0]
+    # Get the predictions and copy the data
+    predictions = interpreter.get_tensor(output_details[0]['index'])[0].copy()
 
     # Find the predicted class and confidence
     predicted_class = np.argmax(predictions)
