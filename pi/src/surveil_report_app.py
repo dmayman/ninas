@@ -66,6 +66,7 @@ def load_reports():
 def report_images(filename):
     # Replace 'path/to/your/folder' with the directory containing your images
     directory = str(repo_root / "pi" / "src" / REPORT_DATA_DIR)
+    print(f"Serving file: {os.path.join(directory, filename)}")
     return send_from_directory(directory, filename)
 
 @app.route("/")
