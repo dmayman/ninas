@@ -37,6 +37,9 @@ def load_reports():
     la_tz = pytz.timezone("America/Los_Angeles")
     now = datetime.now(tz=la_tz)
 
+    # Sort reports by timestamp in descending order
+    reports.sort(key=lambda x: x["timestamp"], reverse=True)
+
     # Calculate relative and absolute timestamps for each report
     for report in reports:
         timestamp = datetime.fromtimestamp(report["timestamp"], tz=la_tz)

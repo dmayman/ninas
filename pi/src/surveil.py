@@ -8,10 +8,10 @@ import numpy as np
 import subprocess
 
 # Configuration Variables
-CONFIDENCE_THRESHOLD = 95  # Confidence in percentage
+CONFIDENCE_THRESHOLD = 90  # Confidence in percentage
 NUM_FRAMES = 3  # Number of frames to analyze
 MOTION_DELAY_MS = 250  # Delay between frames in milliseconds
-MOTION_THRESHOLD = 0.1  # Motion area threshold (fraction of total frame size)
+MOTION_THRESHOLD = 0.05  # Motion area threshold (fraction of total frame size)
 JSON_REPORT_PATH = "report/report.json"
 REPORT_DATA_DIR = "report/report-data"
 
