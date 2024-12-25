@@ -16,7 +16,7 @@ output_details = interpreter.get_output_details()
 class_labels = ["Mila", "Nova", "None"]
 
 # Folder containing test images
-TEST_FOLDER = "test-photos/test-set-3"
+TEST_FOLDER = "test-photos/test-set-2"
 
 # Create the Flask app
 app = Flask(__name__, static_folder=str(TEST_FOLDER))
