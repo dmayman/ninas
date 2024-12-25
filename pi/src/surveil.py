@@ -97,19 +97,33 @@ def main():
     while True:
         _, curr_frame = cap.read()
         if detect_motion(prev_frame, curr_frame):
-            print("Motion detected! Analyzing frames...")
+            print("Motion detected! Capturing frames...")
             captured_frames = []
             for i in range(NUM_FRAMES):
                 time.sleep(MOTION_DELAY_MS / 1000.0)
                 _, frame = cap.read()
                 captured_frames.append(frame)
 
-            results = []
-            for frame in captured_frames:
-                dog, confidence = analyze_frame(frame)
-                if confidence >= CONFIDENCE_THRESHOLD:
-                    results.append((dog, confidence, frame))
+            # Preprocess frames as a batch
+            batch_input = np.vstack([
+                preprocess_frame(frame, (128, 128)) for frame in captured_frames
+            ])
 
+            # Perform inference in a single model invocation
+            interpreter.set_tensor(input_details[0]['index'], batch_input)
+            interpreter.invoke()
+
+            # Extract predictions for each frame
+            predictions = interpreter.get_tensor(output_details[0]['index'])
+
+            # Process predictions
+            results = []
+            for i, prediction in enumerate(predictions):
+                predicted_class = np.argmax(prediction)
+                confidence = prediction[predicted_class] * 100
+                results.append((class_labels[predicted_class], confidence, captured_frames[i]))
+
+            # Check consistency across all predictions
             if len(results) == NUM_FRAMES:
                 consistent_dog = results[0][0]
                 if all(result[0] == consistent_dog for result in results):
