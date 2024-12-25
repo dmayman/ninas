@@ -123,8 +123,9 @@ def main():
                     }
 
                     for i, (dog, confidence, frame) in enumerate(results):
-                        filename = os.path.join(f"{consistent_dog}_{timestamp}_{i}.jpg")
-                        cv2.imwrite(filename, frame)
+                        filename = f"{consistent_dog}_{timestamp}_{i}.jpg"
+                        filepath = os.path.join(REPORT_DATA_DIR, filename)
+                        cv2.imwrite(filepath, frame)
                         report["frames"].append({
                             "filename": filename,
                             "confidence": confidence,
