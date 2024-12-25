@@ -9,7 +9,7 @@ import subprocess
 
 # Configuration Variables
 CONFIDENCE_THRESHOLD = 90  # Confidence in percentage
-NUM_FRAMES = 3  # Number of frames to analyze
+NUM_FRAMES = 2  # Number of frames to analyze
 MOTION_DELAY_MS = 250  # Delay between frames in milliseconds
 MOTION_THRESHOLD = 0.01  # Motion area threshold (fraction of total frame size)
 JSON_REPORT_PATH = "report/report.json"
@@ -104,26 +104,21 @@ def main():
                 _, frame = cap.read()
                 captured_frames.append(frame)
 
-            # Preprocess frames as a batch
-            batch_input = np.vstack([
-                preprocess_frame(frame, (128, 128)) for frame in captured_frames
-            ])
+                # Analyze frame immediately after capture
+                dog, confidence = analyze_frame(frame)
 
-            # Perform inference in a single model invocation
-            interpreter.set_tensor(input_details[0]['index'], batch_input)
-            interpreter.invoke()
+                # Abandon further analysis if confidence is below threshold
+                if confidence < CONFIDENCE_THRESHOLD:
+                    print(f"Frame {i + 1}: Confidence {confidence:.2f}% below threshold {CONFIDENCE_THRESHOLD}%.")
+                    break
 
-            # Extract predictions for each frame
-            predictions = interpreter.get_tensor(output_details[0]['index'])
+                # Append frame only if it passes the confidence threshold
+                if i == 0:  # First frame must pass the threshold
+                    results = [(dog, confidence, frame)]
+                elif i == 1:  # Add the second frame if it passes
+                    results.append((dog, confidence, frame))
 
-            # Process predictions
-            results = []
-            for i, prediction in enumerate(predictions):
-                predicted_class = np.argmax(prediction)
-                confidence = prediction[predicted_class] * 100
-                results.append((class_labels[predicted_class], confidence, captured_frames[i]))
-
-            # Check consistency across all predictions
+            # Process results if both frames are valid
             if len(results) == NUM_FRAMES:
                 consistent_dog = results[0][0]
                 if all(result[0] == consistent_dog for result in results):
