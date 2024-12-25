@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for
 import os
 import numpy as np
 import cv2
-import tensorflow as tf 
+import tflite_runtime.interpreter as tflite
 
 # Load the TensorFlow Lite model
 interpreter = tf.lite.Interpreter(model_path="dog_singular_model.tflite")
