@@ -88,7 +88,7 @@ def index():
             except Exception as e:
                 print(f"Error processing {filename}: {e}")
 
-    return render_template("index.html", grouped_images=grouped_images, folder=TEST_FOLDER)
+    return render_template("evaluate.html", grouped_images=grouped_images, folder=TEST_FOLDER)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
