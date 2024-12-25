@@ -8,7 +8,7 @@ import numpy as np
 import subprocess
 
 # Configuration Variables
-CONFIDENCE_THRESHOLD = 90  # Confidence in percentage
+CONFIDENCE_THRESHOLD = 60  # Confidence in percentage
 NUM_FRAMES = 2  # Number of frames to analyze
 MOTION_DELAY_MS = 250  # Delay between frames in milliseconds
 MOTION_THRESHOLD = 0.01  # Motion area threshold (fraction of total frame size)
