@@ -16,7 +16,7 @@ JSON_REPORT_PATH = "report/report.json"
 REPORT_DATA_DIR = "report/report-data"
 
 # Load TensorFlow Lite model
-interpreter = tflite.Interpreter(model_path="dog_singular_model.tflite")
+interpreter = tflite.Interpreter(model_path="tm_dog_model/model.tflite")
 interpreter.allocate_tensors()
 input_details = interpreter.get_input_details()
 output_details = interpreter.get_output_details()
@@ -29,11 +29,11 @@ os.makedirs(REPORT_DATA_DIR, exist_ok=True)
 
 def preprocess_frame(frame, input_size):
     img = cv2.resize(frame, input_size)
-    img = img.astype(np.float32) / 255.0
+    img = img.astype(np.uint8)
     return np.expand_dims(img, axis=0)
 
 def analyze_frame(frame):
-    input_size = (128, 128)
+    input_size = (224, 224)
     processed_frame = preprocess_frame(frame, input_size)
     interpreter.set_tensor(input_details[0]['index'], processed_frame)
     interpreter.invoke()
