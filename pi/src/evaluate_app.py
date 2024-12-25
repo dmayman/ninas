@@ -5,7 +5,7 @@ import cv2
 import tensorflow as tf 
 
 # Load the TensorFlow Lite model
-interpreter = tf.lite.Interpreter(model_path="dog_classifier_model_v1.tflite")
+interpreter = tf.lite.Interpreter(model_path="dog_singular_model.tflite")
 interpreter.allocate_tensors()
 
 # Get input and output details
@@ -16,7 +16,7 @@ output_details = interpreter.get_output_details()
 class_labels = ["Mila", "Nova", "None"]
 
 # Folder containing test images
-TEST_FOLDER = "test_photos/test-set-2a"
+TEST_FOLDER = "test-photos/test-set-3"
 
 # Create the Flask app
 app = Flask(__name__, static_folder=str(TEST_FOLDER))
@@ -26,7 +26,7 @@ def preprocess_image(image_path, input_size):
     """
     Preprocesses the input image to match the model's requirements.
     """
-    # Load the image    
+    # Load the image
     img = cv2.imread(image_path)
     if img is None:
         raise ValueError(f"Image not found at {image_path}")
@@ -46,7 +46,7 @@ def evaluate_image(image_path):
     """
     Evaluates the image using the TensorFlow Lite model.
     """
-    input_size = (212, 212)  # Match the input size used during training
+    input_size = (128, 128)  # Match the input size used during training
     img = preprocess_image(image_path, input_size)
 
     # Set the input tensor
@@ -88,7 +88,7 @@ def index():
             except Exception as e:
                 print(f"Error processing {filename}: {e}")
 
-    return render_template("evaluate.html", grouped_images=grouped_images, folder=TEST_FOLDER)
+    return render_template("index.html", grouped_images=grouped_images, folder=TEST_FOLDER)
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(debug=True)
