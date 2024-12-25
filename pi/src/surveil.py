@@ -8,9 +8,9 @@ import numpy as np
 import subprocess
 
 # Configuration Variables
-CONFIDENCE_THRESHOLD = 60  # Confidence in percentage
+CONFIDENCE_THRESHOLD = 90  # Confidence in percentage
 NUM_FRAMES = 2  # Number of frames to analyze
-MOTION_DELAY_MS = 250  # Delay between frames in milliseconds
+MOTION_DELAY_MS = 1  # Delay between frames in milliseconds
 MOTION_THRESHOLD = 0.01  # Motion area threshold (fraction of total frame size)
 JSON_REPORT_PATH = "report/report.json"
 REPORT_DATA_DIR = "report/report-data"
@@ -95,6 +95,8 @@ def main():
     _, prev_frame = cap.read()
 
     while True:
+        results = []  # Ensure results is always initialized
+
         _, curr_frame = cap.read()
         if detect_motion(prev_frame, curr_frame):
             print("Motion detected! Capturing frames...")
@@ -110,16 +112,13 @@ def main():
                 # Abandon further analysis if confidence is below threshold
                 if confidence < CONFIDENCE_THRESHOLD:
                     print(f"Frame {i + 1}: Confidence {confidence:.2f}% below threshold {CONFIDENCE_THRESHOLD}%.")
+                    results = []  # Clear results and exit early
                     break
-                
-                results = []
-                # Append frame only if it passes the confidence threshold
-                if i == 0:  # First frame must pass the threshold
-                    results = [(dog, confidence, frame)]
-                elif i == 1:  # Add the second frame if it passes
-                    results.append((dog, confidence, frame))
 
-            # Process results if both frames are valid
+                # Append frame to results if it passes the threshold
+                results.append((dog, confidence, frame))
+
+            # Process results if all frames are valid
             if len(results) == NUM_FRAMES:
                 consistent_dog = results[0][0]
                 if all(result[0] == consistent_dog for result in results):
@@ -143,6 +142,8 @@ def main():
 
                     append_to_json(JSON_REPORT_PATH, report)
                     print(f"Report logged for {consistent_dog}.")
+            else:
+                print("Not enough valid frames for processing.")
 
         prev_frame = curr_frame
 
