@@ -50,6 +50,19 @@ def detect_motion(prev_frame, curr_frame):
     return motion_area > MOTION_THRESHOLD
 
 def append_to_json(file_path, data):
+    """
+    Append data to a JSON file, ensuring compatibility with JSON serialization.
+    """
+    # Ensure all numpy types are converted to native Python types
+    def convert_numpy(obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return obj
+
     if not os.path.exists(file_path):
         with open(file_path, "w") as f:
             json.dump([], f)
@@ -61,7 +74,7 @@ def append_to_json(file_path, data):
 
     temp_path = f"{file_path}.tmp"
     with open(temp_path, "w") as f:
-        json.dump(reports, f, indent=4)
+        json.dump(reports, f, indent=4, default=convert_numpy)
     os.replace(temp_path, file_path)
 
 def start_web_app():
