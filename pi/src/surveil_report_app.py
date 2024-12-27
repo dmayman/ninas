@@ -26,6 +26,7 @@ app = Flask(__name__, static_folder=str(repo_root / "pi" / "src" / REPORT_DATA_D
 def load_reports():
     """
     Loads the JSON report file and dynamically calculates relative and absolute timestamps.
+    Filters reports to only include those from the current day.
     """
     if not os.path.exists(JSON_REPORT_PATH):
         return []
@@ -36,6 +37,15 @@ def load_reports():
     # Use Los Angeles timezone
     la_tz = pytz.timezone("America/Los_Angeles")
     now = datetime.now(tz=la_tz)
+
+    # Get the start of the current day
+    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    # Filter reports to include only those from today
+    reports = [
+        report for report in reports
+        if datetime.fromtimestamp(report["timestamp"], tz=la_tz) >= start_of_day
+    ]
 
     # Sort reports by timestamp in descending order
     reports.sort(key=lambda x: x["timestamp"], reverse=True)
