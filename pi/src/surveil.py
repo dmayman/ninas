@@ -5,12 +5,17 @@ import requests
 import datetime
 import tflite_runtime.interpreter as tflite
 import numpy as np
+from flask import Flask, send_file
 
 # Configuration Variables
 CONFIDENCE_THRESHOLD = 90  # Confidence threshold for detection
 MOTION_DELAY_MS = 1  # Delay between frames in milliseconds
 MOTION_THRESHOLD = 0.01  # Motion area threshold (fraction of total frame size)
 VISIT_BUFFER_SECONDS = 10  # Buffer time to merge visits
+LOG_FILE = "logs/log.txt"  # Log file path
+
+# Flask App
+app = Flask(__name__)
 
 # TensorFlow Lite model setup
 interpreter = tflite.Interpreter(model_path="tm_dog_model/model.tflite")
@@ -45,6 +50,20 @@ except ImportError:
     print("RPi.GPIO not available. Vibration functionality disabled.")
     GPIO = None
 
+# Log a message to the log file
+def log_message(message):
+    print(message)
+    timestamp = datetime.datetime.now().strftime("%b %d %Y %H:%M:%S")
+    log_entry = f"{timestamp}\t{message}\n"
+    if not os.path.exists(LOG_FILE):
+        with open(LOG_FILE, "w") as f:
+            f.write(log_entry)
+    else:
+        with open(LOG_FILE, "r+") as f:
+            content = f.read()
+            f.seek(0, 0)
+            f.write(log_entry + content)
+
 # Helper function to preprocess the frame for the model
 def preprocess_frame(frame, input_size):
     img = cv2.resize(frame, input_size)
@@ -73,7 +92,7 @@ def detect_motion(prev_frame, curr_frame):
 # Vibrate bowl based on detection
 def control_vibration(detected_dog):
     if GPIO is None:
-        print("GPIO functionality is disabled. No vibration control.")
+        log_message("GPIO functionality is disabled. No vibration control.")
         return
 
     if detected_dog == "Nova":
@@ -86,7 +105,7 @@ def send_visit_to_api(dog, start_time, end_time):
     headers = {
         "Authorization": f"Bearer {API_KEY}",
         "Content-Type": "application/json",
-        "User-Agent": "ninas-script/1.0 (+https://github.com/dmayman/ninas)"  # Updated User-Agent
+        "User-Agent": "ninas-script/1.0 (+https://github.com/dmayman/ninas)"
     }
     payload = {
         "dog": dog,
@@ -96,14 +115,15 @@ def send_visit_to_api(dog, start_time, end_time):
     try:
         response = requests.post(API_URL, headers=headers, json=payload)
         response.raise_for_status()
-        print(f"Visit successfully sent for {dog}: {response.json()}")
+        log_message(f"Visit successfully sent for {dog}: {response.json()}")
     except requests.RequestException as e:
-        print(f"Failed to send visit data: {e}")
+        log_message(f"Failed to send visit data: {e}")
         if hasattr(e, 'response') and e.response is not None:
-            print(f"Response content: {e.response.text}")
+            log_message(f"Response content: {e.response.text}")
 
 # Main function for motion detection and visit tracking
 def main():
+    log_message("Starting niñas...")
     cap = cv2.VideoCapture(0)  # Use camera 0
     _, prev_frame = cap.read()
 
@@ -116,7 +136,7 @@ def main():
 
         # Check for motion
         if detect_motion(prev_frame, curr_frame):
-            print("Motion detected! Capturing frame...")
+            log_message("Motion detected! Capturing frame...")
             dog, confidence = analyze_frame(curr_frame)
 
             if confidence >= CONFIDENCE_THRESHOLD and dog != "None":
@@ -131,7 +151,7 @@ def main():
                             current_visit["start_time"],
                             current_visit["end_time"]
                         )
-                        print(f"{current_visit['dog']}'s visit complete.")
+                        log_message(f"{current_visit['dog']}'s visit complete.")
 
                     # Start a new visit
                     current_visit = {
@@ -139,9 +159,9 @@ def main():
                         "start_time": datetime.datetime.now(),
                         "end_time": datetime.datetime.now()
                     }
-                    print(f"Starting new visit for {dog}.")
+                    log_message(f"Starting new visit for {dog}.")
 
-                print(f"Detected dog: {dog} (Confidence: {confidence:.2f}%)")
+                log_message(f"Detected dog: {dog} (Confidence: {confidence:.2f}%)")
 
             # Set vibration control based on detection
             control_vibration(dog)
@@ -157,17 +177,27 @@ def main():
                     current_visit["start_time"],
                     current_visit["end_time"]
                 )
-                print(f"{current_visit['dog']}'s visit complete.")
+                log_message(f"{current_visit['dog']}'s visit complete.")
                 current_visit = {"dog": None, "start_time": None, "end_time": None}
             control_vibration("None")
 
         prev_frame = curr_frame
 
+# Flask Route for Viewing Logs
+@app.route('/', methods=['GET'])
+def view_logs():
+    return send_file(LOG_FILE, mimetype="text/plain")
+
+# Entry point for the script
 if __name__ == "__main__":
+    import threading
     try:
+        # Run Flask app in a separate thread
+        threading.Thread(target=lambda: app.run(host='0.0.0.0', port=5000)).start()
         main()
     except KeyboardInterrupt:
         if GPIO:
             GPIO.output(VIBRATE_GPIO_PIN, GPIO.LOW)
             GPIO.cleanup()
+        log_message("Exiting...")
         print("\nExiting...")

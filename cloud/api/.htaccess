@@ -1,12 +1,8 @@
-# Allow access to record_visit.php from all
 <Files "record_visit.php">
     Order allow,deny
     Allow from all
 </Files>
 
-
-# Default: Deny access to everything else
-<FilesMatch ".*">
-    Order deny,allow
-    Deny from all
-</FilesMatch>
+# Deny access to everything else
+Order deny,allow
+Deny from all
