@@ -6,6 +6,7 @@ import datetime
 import tflite_runtime.interpreter as tflite
 import numpy as np
 from flask import Flask, send_file
+import pytz
 
 # Configuration Variables
 CONFIDENCE_THRESHOLD = 90  # Confidence threshold for detection
@@ -53,7 +54,9 @@ except ImportError:
 # Log a message to the log file
 def log_message(message):
     print(message)
-    timestamp = datetime.datetime.now().strftime("%b %d %Y %H:%M:%S")
+    # Get current time in Los Angeles timezone
+    la_timezone = pytz.timezone("America/Los_Angeles")
+    timestamp = datetime.datetime.now(la_timezone).strftime("%b %d %Y %H:%M:%S")
     log_entry = f"{timestamp}\t{message}\n"
     if not os.path.exists(LOG_FILE):
         with open(LOG_FILE, "w") as f:
