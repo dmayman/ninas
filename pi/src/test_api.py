@@ -2,7 +2,7 @@ import requests
 import datetime
 import os
 
-# API Endpoint and API Key
+# API Endpoint
 API_URL = "https://ninas.davidmayman.com/api/record_visit.php"
 
 # Load API key from file
@@ -17,7 +17,11 @@ API_KEY = load_api_key()
 
 # Function to send a test visit to the API
 def send_test_visit(dog, start_time, end_time):
-    headers = {"Authorization": f"Bearer {API_KEY}"}
+    headers = {
+        "Authorization": f"Bearer {API_KEY}",
+        "Content-Type": "application/json",
+        "User-Agent": "ninas-script/1.0 (+https://github.com/dmayman/ninas)"  # Adjusted User-Agent
+    }
     payload = {
         "dog": dog,
         "start_time": start_time.isoformat(),
@@ -29,6 +33,8 @@ def send_test_visit(dog, start_time, end_time):
         print(f"Test visit successfully sent for {dog}: {response.json()}")
     except requests.RequestException as e:
         print(f"Failed to send test visit data: {e}")
+        if hasattr(e, 'response') and e.response is not None:
+            print(f"Response content: {e.response.text}")
 
 # Test Cases
 def run_tests():
@@ -44,8 +50,12 @@ def run_tests():
     end_time = start_time + datetime.timedelta(minutes=7)
     send_test_visit("Mila", start_time, end_time)
 
-    # Test Case 3: Invalid data (no dog name)
-    headers = {"Authorization": f"Bearer {API_KEY}"}
+    # Test Case 3: Invalid data (missing 'dog' field)
+    headers = {
+        "Authorization": f"Bearer {API_KEY}",
+        "Content-Type": "application/json",
+        "User-Agent": "ninas-script/1.0 (+https://github.com/dmayman/ninas)"
+    }
     payload = {
         "start_time": datetime.datetime.now().isoformat(),
         "end_time": (datetime.datetime.now() + datetime.timedelta(minutes=5)).isoformat()
@@ -56,6 +66,6 @@ def run_tests():
     except requests.RequestException as e:
         print(f"Failed to send invalid test data: {e}")
 
-# Run tests
+# Run the tests
 if __name__ == "__main__":
     run_tests()

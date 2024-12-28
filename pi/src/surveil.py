@@ -83,7 +83,11 @@ def control_vibration(detected_dog):
 
 # Send visit data to the PHP API
 def send_visit_to_api(dog, start_time, end_time):
-    headers = {"Authorization": f"Bearer {API_KEY}"}
+    headers = {
+        "Authorization": f"Bearer {API_KEY}",
+        "Content-Type": "application/json",
+        "User-Agent": "ninas-script/1.0 (+https://github.com/dmayman/ninas)"  # Updated User-Agent
+    }
     payload = {
         "dog": dog,
         "start_time": start_time.isoformat(),
@@ -95,6 +99,8 @@ def send_visit_to_api(dog, start_time, end_time):
         print(f"Visit successfully sent for {dog}: {response.json()}")
     except requests.RequestException as e:
         print(f"Failed to send visit data: {e}")
+        if hasattr(e, 'response') and e.response is not None:
+            print(f"Response content: {e.response.text}")
 
 # Main function for motion detection and visit tracking
 def main():
@@ -125,7 +131,7 @@ def main():
                             current_visit["start_time"],
                             current_visit["end_time"]
                         )
-                        print(f"{dog}'s visit complete.")
+                        print(f"{current_visit['dog']}'s visit complete.")
 
                     # Start a new visit
                     current_visit = {
@@ -151,7 +157,7 @@ def main():
                     current_visit["start_time"],
                     current_visit["end_time"]
                 )
-                print(f"{current_visit["dog"]}'s visit complete.")
+                print(f"{current_visit['dog']}'s visit complete.")
                 current_visit = {"dog": None, "start_time": None, "end_time": None}
             control_vibration("None")
 

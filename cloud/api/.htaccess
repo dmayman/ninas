@@ -4,14 +4,6 @@
     Allow from all
 </Files>
 
-# Restrict access to read_visits.php to localhost and server IP
-<Files "read_visits.php">
-    Order deny,allow
-    Deny from all
-    Allow from 127.0.0.1
-    Allow from ::1
-    Allow from your_server_ip
-</Files>
 
 # Default: Deny access to everything else
 <FilesMatch ".*">

@@ -1,23 +1,10 @@
 <?php
-// Set the URL to the secure `read_visits.php` endpoint
-$api_url = "https://ninas.davidmayman.com/api/read_visits.php";
+require_once "api/read_visits.php";
 
-// Fetch the data from the API
-$ch = curl_init($api_url);
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-$response = curl_exec($ch);
-$http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-curl_close($ch);
-
-// Handle API errors
-if ($http_code !== 200) {
-    die("Error fetching visit data. HTTP Status: $http_code");
-}
-
-// Decode the JSON response
-$visits = json_decode($response, true);
-if (json_last_error() !== JSON_ERROR_NONE) {
-    die("Error decoding JSON response.");
+// Fetch the visits using the function
+$visits = get_all_visits();
+if (isset($visits['error'])) {
+    die("Error fetching visit data: " . htmlspecialchars($visits['error']));
 }
 ?>
 
