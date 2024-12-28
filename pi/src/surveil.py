@@ -1,21 +1,18 @@
 import os
 import time
 import cv2
-import json
+import requests
 import datetime
 import tflite_runtime.interpreter as tflite
 import numpy as np
-import subprocess
 
 # Configuration Variables
-CONFIDENCE_THRESHOLD = 90  # Confidence in percentage
-NUM_FRAMES = 2  # Number of frames to analyze
+CONFIDENCE_THRESHOLD = 90  # Confidence threshold for detection
 MOTION_DELAY_MS = 1  # Delay between frames in milliseconds
 MOTION_THRESHOLD = 0.01  # Motion area threshold (fraction of total frame size)
-JSON_REPORT_PATH = "report/report.json"
-REPORT_DATA_DIR = "report/report-data"
+VISIT_BUFFER_SECONDS = 10  # Buffer time to merge visits
 
-# Load TensorFlow Lite model
+# TensorFlow Lite model setup
 interpreter = tflite.Interpreter(model_path="tm_dog_model/model.tflite")
 interpreter.allocate_tensors()
 input_details = interpreter.get_input_details()
@@ -24,14 +21,37 @@ output_details = interpreter.get_output_details()
 # Class labels
 class_labels = ["Mila", "Nova", "None"]
 
-# Ensure report directory exists
-os.makedirs(REPORT_DATA_DIR, exist_ok=True)
+# Read the API key from a file
+def load_api_key(file_path="api_key.txt"):
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"API key file not found: {file_path}")
+    with open(file_path, "r") as file:
+        return file.read().strip()
 
+# PHP API Endpoint and API Key
+API_URL = "https://ninas.davidmayman.com/api/record_visit.php"
+API_KEY = load_api_key()
+
+# GPIO setup for vibration control (optional)
+VIBRATE_GPIO_PIN = 17  # Example GPIO pin
+DETECTION_TIMEOUT = 2  # Timeout in seconds to deactivate vibration if no motion is detected
+
+try:
+    import RPi.GPIO as GPIO
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(VIBRATE_GPIO_PIN, GPIO.OUT)
+    GPIO.output(VIBRATE_GPIO_PIN, GPIO.LOW)
+except ImportError:
+    print("RPi.GPIO not available. Vibration functionality disabled.")
+    GPIO = None
+
+# Helper function to preprocess the frame for the model
 def preprocess_frame(frame, input_size):
     img = cv2.resize(frame, input_size)
     img = img.astype(np.uint8)
     return np.expand_dims(img, axis=0)
 
+# Analyze a single frame using the TensorFlow Lite model
 def analyze_frame(frame):
     input_size = (224, 224)
     processed_frame = preprocess_frame(frame, input_size)
@@ -39,9 +59,10 @@ def analyze_frame(frame):
     interpreter.invoke()
     predictions = interpreter.get_tensor(output_details[0]['index'])[0]
     predicted_class = np.argmax(predictions)
-    confidence = predictions[predicted_class] * 100
+    confidence = predictions[predicted_class]
     return class_labels[predicted_class], confidence
 
+# Detect motion between two frames
 def detect_motion(prev_frame, curr_frame):
     diff = cv2.absdiff(prev_frame, curr_frame)
     gray = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
@@ -49,116 +70,98 @@ def detect_motion(prev_frame, curr_frame):
     motion_area = cv2.countNonZero(thresh) / float(thresh.size)
     return motion_area > MOTION_THRESHOLD
 
-def append_to_json(file_path, data):
-    """
-    Append data to a JSON file, ensuring compatibility with JSON serialization.
-    """
-    # Ensure all numpy types are converted to native Python types
-    def convert_numpy(obj):
-        if isinstance(obj, np.integer):
-            return int(obj)
-        elif isinstance(obj, np.floating):
-            return float(obj)
-        elif isinstance(obj, np.ndarray):
-            return obj.tolist()
-        return obj
+# Vibrate bowl based on detection
+def control_vibration(detected_dog):
+    if GPIO is None:
+        print("GPIO functionality is disabled. No vibration control.")
+        return
 
-    if not os.path.exists(file_path):
-        with open(file_path, "w") as f:
-            json.dump([], f)
+    if detected_dog == "Nova":
+        GPIO.output(VIBRATE_GPIO_PIN, GPIO.HIGH)
+    else:
+        GPIO.output(VIBRATE_GPIO_PIN, GPIO.LOW)
 
-    with open(file_path, "r") as f:
-        reports = json.load(f)
-
-    reports.append(data)
-
-    temp_path = f"{file_path}.tmp"
-    with open(temp_path, "w") as f:
-        json.dump(reports, f, indent=4, default=convert_numpy)
-    os.replace(temp_path, file_path)
-
-def start_web_app():
-    """
-    Starts the web app as a separate process.
-    """
-    web_app_path = os.path.abspath("surveil_report_app.py")  # Ensure absolute path
-    python_path = os.environ.get("PYTHON_PATH", "python3")  # Use system Python by default
-
+# Send visit data to the PHP API
+def send_visit_to_api(dog, start_time, end_time):
+    headers = {"Authorization": f"Bearer {API_KEY}"}
+    payload = {
+        "dog": dog,
+        "start_time": start_time.isoformat(),
+        "end_time": end_time.isoformat()
+    }
     try:
-        subprocess.Popen(
-            [python_path, web_app_path],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            cwd=os.path.dirname(web_app_path)  # Ensure correct working directory
-        )
-        print("Web app starting...")
-    except FileNotFoundError as e:
-        print(f"Error: Could not find {web_app_path}. Make sure the file exists.")
-    except Exception as e:
-        print(f"Error starting the web app: {e}")
+        response = requests.post(API_URL, headers=headers, json=payload)
+        response.raise_for_status()
+        print(f"Visit successfully sent for {dog}: {response.json()}")
+    except requests.RequestException as e:
+        print(f"Failed to send visit data: {e}")
 
+# Main function for motion detection and visit tracking
 def main():
-    """
-    Main function to detect motion and analyze frames.
-    """
-    # Start the web app
-    start_web_app()
-
     cap = cv2.VideoCapture(0)  # Use camera 0
     _, prev_frame = cap.read()
 
+    last_detected_dog = "None"
+    last_motion_time = time.time()
+    current_visit = {"dog": None, "start_time": None, "end_time": None}
+
     while True:
-        results = []  # Ensure results is always initialized
-
         _, curr_frame = cap.read()
+
+        # Check for motion
         if detect_motion(prev_frame, curr_frame):
-            print("Motion detected! Capturing frames...")
-            captured_frames = []
-            for i in range(NUM_FRAMES):
-                time.sleep(MOTION_DELAY_MS / 1000.0)
-                _, frame = cap.read()
-                captured_frames.append(frame)
+            print("Motion detected! Capturing frame...")
+            dog, confidence = analyze_frame(curr_frame)
 
-                # Analyze frame immediately after capture
-                dog, confidence = analyze_frame(frame)
+            if confidence >= CONFIDENCE_THRESHOLD and dog != "None":
+                if current_visit["dog"] == dog:
+                    # Extend the current visit
+                    current_visit["end_time"] = datetime.datetime.now()
+                else:
+                    # Send the previous visit if it exists
+                    if current_visit["dog"] is not None:
+                        send_visit_to_api(
+                            current_visit["dog"],
+                            current_visit["start_time"],
+                            current_visit["end_time"]
+                        )
+                        print(f"{dog}'s visit complete.")
 
-                # Abandon further analysis if confidence is below threshold
-                if confidence < CONFIDENCE_THRESHOLD:
-                    print(f"Frame {i + 1}: Confidence {confidence:.2f}% below threshold {CONFIDENCE_THRESHOLD}%.")
-                    results = []  # Clear results and exit early
-                    break
-
-                # Append frame to results if it passes the threshold
-                results.append((dog, confidence, frame))
-
-            # Process results if all frames are valid
-            if len(results) == NUM_FRAMES:
-                consistent_dog = results[0][0]
-                if all(result[0] == consistent_dog for result in results):
-                    timestamp = int(time.time())
-                    print(f"Consistent detection of {consistent_dog} with {NUM_FRAMES} frames.")
-
-                    report = {
-                        "dog": consistent_dog,
-                        "timestamp": timestamp,
-                        "frames": []
+                    # Start a new visit
+                    current_visit = {
+                        "dog": dog,
+                        "start_time": datetime.datetime.now(),
+                        "end_time": datetime.datetime.now()
                     }
+                    print(f"Starting new visit for {dog}.")
 
-                    for i, (dog, confidence, frame) in enumerate(results):
-                        filename = f"{consistent_dog}_{timestamp}_{i}.jpg"
-                        filepath = os.path.join(REPORT_DATA_DIR, filename)
-                        cv2.imwrite(filepath, frame)
-                        report["frames"].append({
-                            "filename": filename,
-                            "confidence": confidence,
-                        })
+                print(f"Detected dog: {dog} (Confidence: {confidence:.2f}%)")
 
-                    append_to_json(JSON_REPORT_PATH, report)
-                    print(f"Report logged for {consistent_dog}.")
-            else:
-                print("Not enough valid frames for processing.")
+            # Set vibration control based on detection
+            control_vibration(dog)
+
+            # Update the time of the last motion
+            last_motion_time = time.time()
+
+        # Finalize visit if no motion for DETECTION_TIMEOUT
+        if time.time() - last_motion_time > DETECTION_TIMEOUT:
+            if current_visit["dog"] is not None:
+                send_visit_to_api(
+                    current_visit["dog"],
+                    current_visit["start_time"],
+                    current_visit["end_time"]
+                )
+                print(f"{current_visit["dog"]}'s visit complete.")
+                current_visit = {"dog": None, "start_time": None, "end_time": None}
+            control_vibration("None")
 
         prev_frame = curr_frame
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        if GPIO:
+            GPIO.output(VIBRATE_GPIO_PIN, GPIO.LOW)
+            GPIO.cleanup()
+        print("\nExiting...")
