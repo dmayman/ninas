@@ -388,7 +388,7 @@ def main():
 
             if confidence >= CONFIDENCE_THRESHOLD and dog != "None":
                 detection_result = register_detection(dog, confidence)
-                log_message(f"{detection_result}: {dog} with confidence {confidence:.2f}% ({result["confidence_scores"]})")
+                log_message(f"{detection_result}: {dog} with confidence {confidence:.2f}% {result['confidence_scores']}")
 
                 # Run test cases on the frame
                 current_time = datetime.datetime.now()
