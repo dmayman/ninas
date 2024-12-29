@@ -422,18 +422,18 @@ def main():
 
         # Finalize visit if no motion for DETECTION_TIMEOUT
         if time.time() - last_motion_time > DETECTION_TIMEOUT:
-            if current_visit["dog"] == "Nova":
+            # if current_visit["dog"] == "Nova":
 
-                # # Update buzzers.json with the end time
-                # now = datetime.datetime.now()
-                # with open(BUZZERS_JSON, "r+") as f:
-                #     data = json.load(f)
-                #     for entry in reversed(data):
-                #         if entry["video_file"].endswith(f"Nova_{current_visit['start_time'].strftime('%Y%m%d%H%M%S')}.avi"):
-                #             entry["end_time"] = now.isoformat()
-                #             break
-                #     f.seek(0)
-                #     json.dump(data, f, indent=4)
+            #     # Update buzzers.json with the end time
+            #     now = datetime.datetime.now()
+            #     with open(BUZZERS_JSON, "r+") as f:
+            #         data = json.load(f)
+            #         for entry in reversed(data):
+            #             if entry["video_file"].endswith(f"Nova_{current_visit['start_time'].strftime('%Y%m%d%H%M%S')}.avi"):
+            #                 entry["end_time"] = now.isoformat()
+            #                 break
+            #         f.seek(0)
+            #         json.dump(data, f, indent=4)
 
             # Send the API data and reset the visit
             if current_visit["dog"] is not None:
