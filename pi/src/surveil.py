@@ -381,6 +381,7 @@ def main():
         if detect_motion(prev_frame, curr_frame):
             log_message("Motion detected! Capturing frame...")
             result = evaluate_image(curr_frame)
+            print(result)
             dog = result["class"]
             confidence = result["confidence_scores"][result["class"]]
 
