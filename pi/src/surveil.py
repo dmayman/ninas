@@ -233,20 +233,18 @@ if not BUZZERS_JSON.exists():
     with open(BUZZERS_JSON, "w") as f:
         json.dump([], f)
 
-def start_recording(video_path, frame_rate=20.0, resolution=(640, 480)):
+def start_recording(video_path, cap, frame_rate=20.0, resolution=(640, 480)):
     """
-    Start recording video in a separate thread.
+    Start recording video using the provided camera instance in a separate thread.
     """
     global recording, video_writer, recording_thread
 
     def record():
         global video_writer
-        cap = cv2.VideoCapture(0)  # Use the same camera feed
         while recording:
             ret, frame = cap.read()
             if ret:
                 video_writer.write(frame)
-        cap.release()
 
     with record_lock:
         if recording:
