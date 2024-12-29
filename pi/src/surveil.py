@@ -139,7 +139,7 @@ def test_cases(frame, dog, confidence, confidence_values, current_time, last_det
         triggered_tests.append(f"Low confidence for top class: {confidence:.2f}%.")
 
     # Test Case 3: 2nd or 3rd confidence > 25%
-    other_confidences = [value for i, value in enumerate(confidence_values) if class_labels[i] != dog]
+    other_confidences = [value for key, value in confidence_values.items() if key != dog]
     if any(c > SECOND_THIRD_CONFIDENCE_THRESHOLD for c in other_confidences):
         triggered_tests.append("High confidence for 2nd/3rd class.")
 
