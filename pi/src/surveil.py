@@ -104,7 +104,7 @@ def control_vibration(detected_dog):
 # TEST CASES
 
 # Directory and JSON file for test reports
-REPORT_DIR = repo_root / "static" / "report-data/"
+REPORT_DIR = repo_root / "static" / "report-data"
 REPORT_JSON = "report/tests.json"
 
 # Test case parameters
