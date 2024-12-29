@@ -7,6 +7,7 @@ import tflite_runtime.interpreter as tflite
 import numpy as np
 from flask import Flask, send_file
 import pytz
+import json
 
 # Master override to disable or enable vibration
 ENABLE_VIBRATION = False  # Set to True to enable vibration, False to disable
@@ -87,6 +88,74 @@ def control_vibration(detected_dog):
         GPIO.output(VIBRATE_GPIO_PIN, GPIO.LOW)
         log_message("Vibration deactivated.")
 
+
+# TEST CASES
+
+# Directory and JSON file for test reports
+REPORT_DIR = "report/report-data/"
+REPORT_JSON = "report/tests.json"
+
+# Test case parameters
+SWITCH_DETECTION_TIME = 1  # Time in seconds for quick switching between dogs
+LOW_CONFIDENCE_THRESHOLD = 95  # Threshold for low confidence
+SECOND_THIRD_CONFIDENCE_THRESHOLD = 25  # Threshold for 2nd/3rd class confidence
+
+# Ensure report directories and files exist
+if not os.path.exists(REPORT_DIR):
+    os.makedirs(REPORT_DIR)
+
+if not os.path.exists(REPORT_JSON):
+    with open(REPORT_JSON, "w") as f:
+        json.dump([], f)
+
+def test_cases(frame, dog, confidence, confidence_values, current_time, last_detected_time, last_detected_dog):
+    """
+    Evaluates the frame against test cases and saves it if a case is triggered.
+    """
+    global last_mila_end_time
+
+    triggered_tests = []
+
+    # Test Case 1: Rapid dog switching
+    if last_detected_dog and dog != last_detected_dog and (current_time - last_detected_time).total_seconds() <= SWITCH_DETECTION_TIME:
+        triggered_tests.append("Rapid dog switching detected.")
+
+    # Test Case 2: Low confidence for top class
+    if confidence < LOW_CONFIDENCE_THRESHOLD:
+        triggered_tests.append(f"Low confidence for top class: {confidence:.2f}%.")
+
+    # Test Case 3: 2nd or 3rd confidence > 25%
+    other_confidences = [value for i, value in enumerate(confidence_values) if class_labels[i] != dog]
+    if any(c > SECOND_THIRD_CONFIDENCE_THRESHOLD for c in other_confidences):
+        triggered_tests.append("High confidence for 2nd/3rd class.")
+
+    # Save the frame and metadata if any test case is triggered
+    if triggered_tests:
+        filename = f"{dog}_{current_time.strftime('%Y%m%d%H%M%S')}.jpg"
+        filepath = os.path.join(REPORT_DIR, filename)
+        cv2.imwrite(filepath, frame)
+
+        # Prepare the metadata
+        test_data = {
+            "file_path": filepath,
+            "confidence_values": {class_labels[i]: confidence_values[i] for i in range(len(class_labels))},
+            "triggered_tests": triggered_tests
+        }
+
+        # Append the data to the JSON report
+        with open(REPORT_JSON, "r+") as f:
+            data = json.load(f)
+            data.append(test_data)
+            f.seek(0)
+            json.dump(data, f, indent=4)
+
+        log_message(f"Test case triggered. Saved to {filepath} with details: {test_data}")
+
+    # Update the last detection details
+    return current_time, dog
+
+# END TEST CASES
+
 # Helper function to preprocess the frame for the model
 def preprocess_frame(frame, input_size):
     img = cv2.resize(frame, input_size)
@@ -163,7 +232,8 @@ def main():
     cap = cv2.VideoCapture(0)  # Use camera 0
     _, prev_frame = cap.read()
 
-    last_detected_dog = "None"
+    last_detected_dog = None
+    last_detected_time = datetime.datetime.now()
     last_motion_time = time.time()
     current_visit = {"dog": None, "start_time": None, "end_time": None}
 
@@ -178,6 +248,13 @@ def main():
             if confidence >= CONFIDENCE_THRESHOLD and dog != "None":
                 detection_result = register_detection(dog, confidence)
                 log_message(f"{detection_result}: {dog} with confidence {confidence:.2f}%")
+
+                # Run test cases on the frame
+                current_time = datetime.datetime.now()
+                confidence_values = interpreter.get_tensor(output_details[0]['index'])[0] * 100
+                last_detected_time, last_detected_dog = test_cases(
+                    curr_frame, dog, confidence, confidence_values, current_time, last_detected_time, last_detected_dog
+                )
 
                 if detection_result == "Mila registered" or detection_result == "Nova registered":
                     if current_visit["dog"] == dog:
