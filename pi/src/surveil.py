@@ -149,7 +149,7 @@ def test_cases(frame, dog, confidence, confidence_values, current_time, last_det
 
         # Prepare the metadata
         test_data = {
-            "file_path": filepath,
+            "file_path": filename,
             "confidence_values": {class_labels[i]: confidence_values[i] for i in range(len(class_labels))},
             "triggered_tests": triggered_tests
         }
