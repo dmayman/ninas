@@ -1,2 +1,6 @@
 shared/training_photos
-ml/
+ml/archive/
+ml/env/
+ml/env3.10/
+ml/training_photos/
+ml/training_photos_backup/

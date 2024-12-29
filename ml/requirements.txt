@@ -1,0 +1,6 @@
+Flask
+opencv-python
+pillow
+scipy
+tensorflow
+tflite-support
