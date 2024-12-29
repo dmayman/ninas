@@ -1,21 +1,29 @@
 <?php
-header("Content-Type: application/json");
-require_once "db.php"; // Ensure this file contains the database connection logic
+require_once "db.php";
 
-// Function to fetch all visits from the database
-function get_all_visits() {
+// Fetch the last visit for a specific dog
+function get_last_visit($dog) {
     try {
         $pdo = get_db_connection();
-        $stmt = $pdo->query("SELECT * FROM visits ORDER BY start_time DESC");
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $stmt = $pdo->prepare("SELECT * FROM visits WHERE dog = :dog ORDER BY end_time DESC LIMIT 1");
+        $stmt->execute(['dog' => $dog]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
-        http_response_code(500);
         return ["error" => $e->getMessage()];
     }
 }
 
-// If this file is accessed directly, output the visits as JSON
-if (basename($_SERVER['PHP_SELF']) === basename(__FILE__)) {
-    echo json_encode(get_all_visits(), JSON_PRETTY_PRINT);
+// Helper function for relative time
+function time_elapsed_string($datetime) {
+    $now = new DateTime();
+    $ago = new DateTime($datetime);
+    $diff = $now->diff($ago);
+
+    $parts = [];
+    if ($diff->d > 0) $parts[] = $diff->d . "d";
+    if ($diff->h > 0) $parts[] = $diff->h . "h";
+    if ($diff->i > 0) $parts[] = $diff->i . "m";
+
+    return implode(" ", $parts) . " ago";
 }
 ?>

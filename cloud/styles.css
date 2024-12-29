@@ -1,0 +1,74 @@
+@font-face {
+    font-family: 'FREEFATFONT-Slanted';
+    src: url('FREEFATFONT-Slanted.otf') format('opentype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Lexend+Deca&family=Lexend+Peta&display=swap');
+
+/* Define CSS variables */
+:root {
+    --font-fat: 'FREEFATFONT-Slanted', Arial, sans-serif;
+    --font-title: 'Lexend Peta';
+    --font-normal: 'Lexend Deca';
+    --color-mila: yellow;
+    --color-nova: blue;
+    --text-color-mila: black;
+    --text-color-nova: white;
+    --dog-emoji-size: 100px;
+    --dog-name-size: 36px;
+    --info-size: 18px;
+    --time-size: 24px;
+}
+
+body {
+    margin: 0;
+    font-family: var(--font-primary);
+    display: flex;
+    flex-direction: row;
+    height: 100vh;
+}
+
+.column {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    color: white;
+}
+
+.mila {
+    background-color: var(--color-mila);
+    color: var(--text-color-mila);
+}
+
+.nova {
+    background-color: var(--color-nova);
+    color: var(--text-color-nova);
+}
+
+.dog-emoji {
+    font-size: var(--dog-emoji-size);
+}
+
+.dog-name {
+    font-size: var(--dog-name-size);
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.info {
+    font-size: var(--info-size);
+    text-align: center;
+    margin-top: 10px;
+}
+
+.time {
+    font-size: var(--time-size);
+    font-weight: bold;
+    margin-top: 5px;
+}
