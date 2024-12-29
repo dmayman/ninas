@@ -220,64 +220,10 @@ def trigger_tests():
     return "Test cases triggered. Check the JSON file."
 
 
-# Video Recording
-
-# Globals for video recording
-recording = False
-video_writer = None
-recording_thread = None
-record_lock = Lock()
-
-# Ensure the JSON file exists
+# Ensure the BUZZERS JSON file exists
 if not BUZZERS_JSON.exists():
     with open(BUZZERS_JSON, "w") as f:
         json.dump([], f)
-
-def start_recording(video_path, frame_rate=20.0, resolution=(640, 480)):
-    """
-    Start recording video using the provided camera instance in a separate thread.
-    """
-    global recording, video_writer, recording_thread
-
-    def record():
-        global video_writer
-        while recording:
-            ret, frame = cap.read()
-            if ret:
-                video_writer.write(frame)
-
-    with record_lock:
-        if recording:
-            return  # Already recording
-
-        recording = True
-        video_writer = cv2.VideoWriter(
-            video_path,
-            cv2.VideoWriter_fourcc(*"XVID"),
-            frame_rate,
-            resolution
-        )
-        recording_thread = Thread(target=record)
-        recording_thread.start()
-
-def stop_recording():
-    """
-    Stop recording video.
-    """
-    global recording, video_writer, recording_thread
-
-    with record_lock:
-        if not recording:
-            return
-
-        recording = False
-        if recording_thread is not None:
-            recording_thread.join()
-        if video_writer is not None:
-            video_writer.release()
-        video_writer = None
-
-
 
 # END TEST CASES
 
@@ -297,6 +243,61 @@ def analyze_frame(frame):
     predicted_class = np.argmax(predictions)
     confidence = predictions[predicted_class]
     return class_labels[predicted_class], confidence
+
+def preprocess_image(image_path, input_size):
+    """
+    Preprocesses the input image to match the model's requirements by cropping to a square and resizing.
+    """
+    img = cv2.imread(image_path)
+    if img is None:
+        raise ValueError(f"Image not found at {image_path}")
+    
+    # Get the dimensions of the image
+    height, width, _ = img.shape
+
+    # Determine the size of the square crop (smallest dimension)
+    crop_size = min(height, width)
+
+    # Calculate the top-left corner of the crop
+    top = 0
+    left = 0
+
+    # Crop the image to a square
+    cropped_img = img[top:top + crop_size, left:left + crop_size]
+
+    # Resize the cropped image to the input size
+    resized_img = cv2.resize(cropped_img, input_size)
+
+    # Ensure pixel values are UINT8 (0-255)
+    resized_img = resized_img.astype(np.uint8)
+
+    # Add a batch dimension
+    return np.expand_dims(resized_img, axis=0)
+
+# Alt evaluation code
+def evaluate_image(image_path):
+    """
+    Evaluates the image using the TensorFlow Lite model.
+    """
+    input_size = (224, 224)  # Match the input size used during training
+    img = preprocess_image(image_path, input_size)
+
+    interpreter.set_tensor(input_details[0]['index'], img)
+    interpreter.invoke()
+
+    predictions = interpreter.get_tensor(output_details[0]['index'])[0]
+
+    # Linear map from 0–255 to 0–100
+    predictions = predictions / 255.0 * 100.0  # Scale to 0–100
+
+    # Ensure predictions are valid
+    predictions = np.nan_to_num(predictions, nan=0.0)  # Replace NaN values with 0
+    confidence_scores = {label: float(predictions[i]) for i, label in enumerate(class_labels)}
+
+    return {
+        "class": max(confidence_scores, key=confidence_scores.get),  # Top class
+        "confidence_scores": confidence_scores
+    }
 
 # Detect motion between two frames
 def detect_motion(prev_frame, curr_frame):
@@ -329,16 +330,11 @@ def register_detection(dog, confidence):
                 log_message("Buffer ended. Nova is now being processed.")
                 last_mila_end_time = None  # Clear the buffer
 
-            # Start video recording for Nova
-            video_path = REPORT_DATA_DIR / f"Nova_{now.strftime('%Y%m%d%H%M%S')}.avi"
-            start_recording(str(video_path))
-
             # Log to buzzers.json
             with open(BUZZERS_JSON, "r+") as f:
                 data = json.load(f)
                 data.append({
                     "start_time": now.isoformat(),
-                    "video_file": str(video_path),
                     "confidence": confidence
                 })
                 f.seek(0)
@@ -380,22 +376,24 @@ def main():
     current_visit = {"dog": None, "start_time": None, "end_time": None}
 
     while True:
-        _, curr_frame = cap.read()
+        #_, curr_frame = cap.read()
+        _, curr_frame = Path("test-photos/test-set-3/Nova_1735085901_2.jpg")
 
         # Check for motion
         if detect_motion(prev_frame, curr_frame):
             log_message("Motion detected! Capturing frame...")
-            dog, confidence = analyze_frame(curr_frame)
+            result = evaluate_image(curr_frame)
+            dog = result["class"]
+            confidence = result["confidence_scores"][result["class"]]
 
             if confidence >= CONFIDENCE_THRESHOLD and dog != "None":
                 detection_result = register_detection(dog, confidence)
-                log_message(f"{detection_result}: {dog} with confidence {confidence:.2f}%")
+                log_message(f"{detection_result}: {dog} with confidence {confidence:.2f}% ({result["confidence_scores"]})")
 
                 # Run test cases on the frame
                 current_time = datetime.datetime.now()
-                confidence_values = interpreter.get_tensor(output_details[0]['index'])[0] * 100
                 last_detected_time, last_detected_dog = test_cases(
-                    curr_frame, dog, confidence, confidence_values, current_time, last_detected_time, last_detected_dog
+                    curr_frame, dog, confidence, result["confidence_scores"], current_time, last_detected_time, last_detected_dog
                 )
 
                 if detection_result == "Mila registered" or detection_result == "Nova registered":
@@ -426,8 +424,6 @@ def main():
         # Finalize visit if no motion for DETECTION_TIMEOUT
         if time.time() - last_motion_time > DETECTION_TIMEOUT:
             if current_visit["dog"] == "Nova":
-                # Stop video recording
-                stop_recording()
 
                 # Update buzzers.json with the end time
                 now = datetime.datetime.now()
