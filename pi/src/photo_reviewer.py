@@ -142,5 +142,44 @@ def photos(category):
 
     return render_template("photos.html", category=category, photos=photos)
 
+@app.route("/batch_action", methods=["POST"])
+def batch_action():
+    """
+    Perform batch actions on photos in a specific category.
+    The action and category are sent via a POST request.
+    """
+    valid_categories = {"Mila": mila_dir, "Nova": nova_dir, "None": none_dir, "untagged": untagged_dir}
+    action = request.form.get("action")
+    category = request.form.get("category")
+
+    if category not in valid_categories:
+        return "Invalid category.", 400
+
+    target_dir = valid_categories[category]
+
+    if action == "delete":
+        # Delete all photos in the category
+        for photo in os.listdir(target_dir):
+            photo_path = target_dir / photo
+            if photo_path.is_file() and photo.endswith(".jpg"):
+                photo_path.unlink()
+        return f"All photos in '{category}' have been deleted.", 200
+
+    elif action == "move_to":
+        # Move all photos from 'untagged' to the specified category
+        source_dir = untagged_dir
+        if category == "untagged":
+            return "Cannot move photos into 'untagged'.", 400
+
+        for photo in os.listdir(source_dir):
+            photo_path = source_dir / photo
+            if photo_path.is_file() and photo.endswith(".jpg"):
+                dest_path = target_dir / photo
+                shutil.move(photo_path, dest_path)
+        return f"All photos in 'untagged' have been moved to '{category}'.", 200
+
+    else:
+        return "Invalid action.", 400
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
