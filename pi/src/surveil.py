@@ -233,7 +233,7 @@ if not BUZZERS_JSON.exists():
     with open(BUZZERS_JSON, "w") as f:
         json.dump([], f)
 
-def start_recording(video_path, cap, frame_rate=20.0, resolution=(640, 480)):
+def start_recording(video_path, frame_rate=20.0, resolution=(640, 480)):
     """
     Start recording video using the provided camera instance in a separate thread.
     """
@@ -370,6 +370,7 @@ def send_visit_to_api(dog, start_time, end_time):
 # Main function for motion detection and visit tracking
 def main():
     log_message("Starting niñas...")
+    global cap
     cap = cv2.VideoCapture(0)  # Use camera 0
     _, prev_frame = cap.read()
 
