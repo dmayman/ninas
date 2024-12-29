@@ -458,6 +458,17 @@ def main():
 def view_logs():
     return send_file(LOG_FILE, mimetype="text/plain")
 
+@app.route('/simulate_nova', methods=['GET'])
+def simulate_nova():
+    # Simulated data for Nova
+    dog = "Nova"
+    confidence = CONFIDENCE_THRESHOLD + 1  # Ensure it's above the threshold
+
+    # Call the register_detection function
+    result = register_detection(dog, confidence)
+
+    return f"Simulated detection result: {result}", 200
+
 # Entry point for the script
 if __name__ == "__main__":
     import threading
