@@ -144,7 +144,7 @@ def test_cases(frame, dog, confidence, confidence_values, current_time, last_det
     # Save the frame and metadata if any test case is triggered
     if triggered_tests:
         filename = f"TestCase_{current_time.strftime('%Y%m%d%H%M%S')}.jpg"
-        filepath = REPORT_DIR / filename
+        filepath = os.path.join(REPORT_DIR, filename)
         cv2.imwrite(filepath, frame)
 
         # Prepare the metadata
@@ -171,7 +171,7 @@ def trigger_tests():
     """
     Manually trigger all test cases for debugging purposes.
     """
-    debug_frame = cv2.imread(f"{REPORT_DIR}debug.jpg")  # Use a debug image for testing
+    debug_frame = cv2.imread(f"{REPORT_DIR}/debug.jpg")  # Use a debug image for testing
     if debug_frame is None:
         return "Debug image not found.", 404
 
