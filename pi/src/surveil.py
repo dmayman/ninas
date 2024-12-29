@@ -145,13 +145,15 @@ def test_cases(frame, dog, confidence, confidence_values, current_time, last_det
 
     # Save the frame and metadata if any test case is triggered
     if triggered_tests:
-        filename = f"TestCase_{current_time.strftime('%Y%m%d%H%M%S')}.jpg"
+        timestamp = current_time.strftime('%Y%m%d%H%M%S')
+        filename = f"TestCase_{timestamp}.jpg"
         filepath = os.path.join(REPORT_DATA_DIR, filename)
         cv2.imwrite(filepath, frame)
 
         # Prepare the metadata
         test_data = {
             "file_path": filename,
+            "timestamp": timestamp,
             "confidence_values": {class_labels[i]: confidence_values[i] for i in range(len(class_labels))},
             "triggered_tests": triggered_tests
         }

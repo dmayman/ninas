@@ -31,6 +31,19 @@ for directory in [untagged_dir, mila_dir, nova_dir, none_dir, report_dir]:
 # Initialize Flask
 app = Flask(__name__, static_folder=str(repo_root / "static"))
 
+#Time formatting  
+def format_relative_time(target_time):
+    now = datetime.now()
+    delta = now - target_time
+    if delta.days > 0:
+        return f"{delta.days} days ago"
+    elif delta.seconds > 3600:
+        return f"{delta.seconds // 3600} hours ago"
+    elif delta.seconds > 60:
+        return f"{delta.seconds // 60} minutes ago"
+    else:
+        return "Just now"
+
 @app.route("/")
 def index():
     # Prepare the dictionaries for all categories
@@ -68,6 +81,33 @@ def test_cases():
 
     with open(test_cases_json, "r") as f:
         data = json.load(f)
+
+    for entry in data:
+        parsed_time = datetime.strptime(entry["timestamp"], "%Y%m%d%H%M%S")
+        
+        # Format as absolute time (e.g., "December 29, 2024, 19:34:23")
+        absolute_time = parsed_time.strftime("%B %d, %Y, %H:%M:%S")
+        relative_time = ''
+
+        # Compute relative time from now
+        now = datetime.now()
+        time_difference = now - parsed_time
+
+        if time_difference.total_seconds() > 0:
+            # Past event
+            if time_difference.days > 0:
+                relative_time = f"{time_difference.days} days ago"
+            elif time_difference.seconds >= 3600:
+                relative_time = f"{time_difference.seconds // 3600} hours ago"
+            elif time_difference.seconds >= 60:
+                relative_time = f"{time_difference.seconds // 60} minutes ago"
+            else:
+                relative_time = "just now"
+
+        entry.append({
+            "absolute-time": absolute_time
+            "relative-time": relative_time
+        })
 
     return render_template("test_cases.html", test_cases=data)
 
