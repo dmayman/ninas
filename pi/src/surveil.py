@@ -199,6 +199,7 @@ def trigger_tests():
             last_time,
             "Nova" if detection["dog"] == "Mila" else "Mila"  # Alternate previous dog
         )
+        time.sleep(.5)
 
     return "Test cases triggered. Check the JSON file."
 
