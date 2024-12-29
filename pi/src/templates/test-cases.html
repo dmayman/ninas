@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Cases</title>
+</head>
+<body>
+    <h1>Test Cases</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Photo</th>
+                <th>Confidence Values</th>
+                <th>Triggered Tests</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for test in test_cases %}
+            <tr>
+                <td><img src="{{ url_for('static', filename=test.file_path.replace('static/', '')) }}" alt="{{ test.file_path }}" width="200"></td>
+                <td>
+                    <ul>
+                        {% for label, confidence in test.confidence_values.items() %}
+                        <li>{{ label }}: {{ "%.2f" % confidence }}%</li>
+                        {% endfor %}
+                    </ul>
+                </td>
+                <td>
+                    <ul>
+                        {% for test_message in test.triggered_tests %}
+                        <li>{{ test_message }}</li>
+                        {% endfor %}
+                    </ul>
+                </td>
+                <td>
+                    <a href="{{ url_for('copy_photo', photo=test.file_path.split('/')[-1], label='Mila') }}">Copy to Mila</a> |
+                    <a href="{{ url_for('copy_photo', photo=test.file_path.split('/')[-1], label='Nova') }}">Copy to Nova</a> |
+                    <a href="{{ url_for('copy_photo', photo=test.file_path.split('/')[-1], label='None') }}">Copy to None</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

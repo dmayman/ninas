@@ -3,25 +3,28 @@ import os
 from pathlib import Path
 from datetime import datetime, timedelta
 import pytz  # Import pytz for time zone handling
+import json
+import shutil  # For copying files
 
 # Determine the absolute path to the shared folder
 def find_repo_root(start_path):
     current_path = Path(start_path).resolve()
     while not (current_path / ".repo_root").exists():
-        if current_path.parent == current_path:
-            raise FileNotFoundError("Could not locate repo root marker (.repo_root)")
+        raise FileNotFoundError("Could not locate repo root marker (.repo_root)")
         current_path = current_path.parent
     return current_path
 
 repo_root = find_repo_root(__file__)
 photos_dir = repo_root / "static" / "training_photos"
+report_dir = repo_root / "static" / "report-data"  # Updated path for report-data
 untagged_dir = photos_dir / "untagged"
 mila_dir = photos_dir / "Mila"
 nova_dir = photos_dir / "Nova"
 none_dir = photos_dir / "None"  # New "None" category
+test_cases_json = report_dir / "tests.json"  # Path to the tests.json file
 
 # Ensure directories exist
-for directory in [untagged_dir, mila_dir, nova_dir, none_dir]:
+for directory in [untagged_dir, mila_dir, nova_dir, none_dir, report_dir]:
     directory.mkdir(parents=True, exist_ok=True)
 
 # Initialize Flask
@@ -35,17 +38,69 @@ def index():
         "Nova": nova_dir,
         "None": none_dir,
         "untagged": untagged_dir,
+        "test_cases": test_cases_json
     }
 
     dog_folders = {}
     dog_previews = {}
 
     for category, folder in categories.items():
-        photos = [f for f in os.listdir(folder) if f.endswith(".jpg")]
-        dog_folders[category] = len(photos)
-        dog_previews[category] = photos[0] if photos else None
+        if category == "test_cases":
+            # Count JSON entries
+            if test_cases_json.exists():
+                with open(test_cases_json, "r") as f:
+                    data = json.load(f)
+                dog_folders[category] = len(data)
+                dog_previews[category] = data[0]["file_path"] if data else None
+        else:
+            photos = [f for f in os.listdir(folder) if f.endswith(".jpg")]
+            dog_folders[category] = len(photos)
+            dog_previews[category] = photos[0] if photos else None
 
     return render_template("index.html", dogs=dog_folders, previews=dog_previews)
+
+@app.route("/test_cases")
+def test_cases():
+    # Load test cases from JSON
+    if not test_cases_json.exists():
+        return "No test cases found.", 404
+
+    with open(test_cases_json, "r") as f:
+        data = json.load(f)
+
+    return render_template("test_cases.html", test_cases=data)
+
+@app.route("/copy_to/<photo>/<label>")
+def copy_photo(photo, label):
+    valid_categories = {"Mila": mila_dir, "Nova": nova_dir, "None": none_dir}
+
+    if label not in valid_categories:
+        return "Invalid label.", 404
+
+    # Locate the photo from tests.json
+    with open(test_cases_json, "r+") as f:
+        data = json.load(f)
+        photo_entry = next((entry for entry in data if entry["file_path"].endswith(photo)), None)
+
+        if not photo_entry:
+            return "Photo not found in test cases.", 404
+
+        # Copy the photo to the target directory
+        src_path = Path(photo_entry["file_path"])
+        dest_dir = valid_categories[label]
+        dest_path = dest_dir / src_path.name
+
+        shutil.copy(src_path, dest_path)
+
+        # Append copy details to the JSON entry
+        photo_entry["copied_to"] = str(dest_path)
+
+        # Update the JSON file
+        f.seek(0)
+        json.dump(data, f, indent=4)
+        f.truncate()
+
+    return redirect(url_for("test_cases"))
 
 @app.route("/photos/<category>")
 def photos(category):
@@ -85,110 +140,6 @@ def photos(category):
         photos[photo] = {"relative": relative, "absolute": absolute}
 
     return render_template("photos.html", category=category, photos=photos)
-
-@app.route("/label/<photo>/<label>")
-def label_photo(photo, label):
-    valid_categories = {"Mila": mila_dir, "Nova": nova_dir, "None": none_dir, "untagged": untagged_dir}
-
-    # Determine the source folder based on the photo's current category
-    src_category = request.args.get("src_category")
-    if src_category not in valid_categories:
-        return "Invalid source category.", 404
-
-    src_dir = valid_categories[src_category]
-    src = src_dir / photo
-
-    if not src.exists():
-        return "Photo not found.", 404
-
-    # Determine the destination folder
-    dest_dir = valid_categories[label]
-    dest = dest_dir / photo
-    src.rename(dest)
-    return redirect(url_for("photos", category=src_category))
-
-@app.route("/batch_action", methods=["POST"])
-def batch_action():
-    data = request.get_json()
-    action = data.get("action")
-    photos = data.get("photos", [])
-    category = data.get("category")
-
-    valid_categories = {"Mila": mila_dir, "Nova": nova_dir, "None": none_dir, "untagged": untagged_dir}
-    if category not in valid_categories:
-        return "Invalid category", 400
-
-    src_dir = valid_categories[category]
-
-    for photo in photos:
-        src = src_dir / photo
-        if not src.exists():
-            continue
-
-        if action == "delete":
-            src.unlink()
-        elif action in ["Mila", "Nova", "None"]:
-            dest_dir = valid_categories[action]
-            dest = dest_dir / photo
-            src.rename(dest)
-
-    return "OK", 200
-
-@app.route("/delete/<photo>")
-def delete_photo(photo):
-    valid_categories = {"Mila": mila_dir, "Nova": nova_dir, "None": none_dir, "untagged": untagged_dir}
-
-    # Determine the source folder based on the photo's current category
-    src_category = request.args.get("src_category")
-    if src_category not in valid_categories:
-        return "Invalid source category.", 404
-
-    src_dir = valid_categories[src_category]
-    src = src_dir / photo
-
-    if not src.exists():
-        return "Photo not found.", 404
-
-    src.unlink()
-    return redirect(url_for("photos", category=src_category))
-
-@app.route("/review_duplicates/<category>/<photo>")
-def review_duplicates(category, photo):
-    from imagehash import phash
-    from PIL import Image
-
-    # Directory for the current category
-    valid_categories = {"Mila": mila_dir, "Nova": nova_dir, "None": none_dir, "untagged": untagged_dir}
-    if category not in valid_categories:
-        return "Invalid category.", 404
-
-    photo_dir = valid_categories[category]
-    target_photo_path = photo_dir / photo
-
-    if not target_photo_path.exists():
-        return "Photo not found.", 404
-
-    # Calculate hash for the target photo
-    target_hash = phash(Image.open(target_photo_path))
-
-    # Compare target photo hash with others in the category
-    duplicates = []
-    for other_photo in photo_dir.iterdir():
-        if other_photo.name == photo or not other_photo.name.endswith(".jpg"):
-            continue
-        other_hash = phash(Image.open(other_photo))
-        distance = target_hash - other_hash
-        duplicates.append({"photo": other_photo.name, "distance": distance})
-
-    # Sort duplicates by hash distance
-    duplicates = sorted(duplicates, key=lambda x: x["distance"])
-
-    return render_template(
-        "review_duplicates.html",
-        category=category,
-        target_photo=photo,
-        duplicates=duplicates
-    )
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
