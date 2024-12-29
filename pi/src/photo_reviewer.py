@@ -107,6 +107,8 @@ def test_cases():
         entry["absolute-time"] = absolute_time,
         entry["relative-time"] = relative_time
 
+        print(entry)
+
     return render_template("test_cases.html", test_cases=data)
 
 @app.route("/copy_to/<photo>/<label>")
