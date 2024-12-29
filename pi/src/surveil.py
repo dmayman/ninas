@@ -159,7 +159,7 @@ def trigger_tests():
     """
     Manually trigger all test cases for debugging purposes.
     """
-    debug_frame = cv2.imread("static/debug.jpg")  # Use a debug image for testing
+    debug_frame = cv2.imread(f"{REPORT_DIR}debug.jpg")  # Use a debug image for testing
     if debug_frame is None:
         return "Debug image not found.", 404
 
