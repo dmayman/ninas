@@ -9,6 +9,7 @@ from flask import Flask, send_file
 import pytz
 import json
 from pathlib import Path
+from threading import Thread, Lock
 
 # Master override to disable or enable vibration
 ENABLE_VIBRATION = False  # Set to True to enable vibration, False to disable
@@ -104,8 +105,9 @@ def control_vibration(detected_dog):
 # TEST CASES
 
 # Directory and JSON file for test reports
-REPORT_DIR = repo_root / "static" / "report-data"
-REPORT_JSON = "report/tests.json"
+REPORT_DATA_DIR = repo_root / "static" / "report-data"
+TESTS_JSON = Path("report/tests.json")
+BUZZERS_JSON = Path("report/buzzers.json")
 
 # Test case parameters
 SWITCH_DETECTION_TIME = 1  # Time in seconds for quick switching between dogs
@@ -113,11 +115,11 @@ LOW_CONFIDENCE_THRESHOLD = 95  # Threshold for low confidence
 SECOND_THIRD_CONFIDENCE_THRESHOLD = 25  # Threshold for 2nd/3rd class confidence
 
 # Ensure report directories and files exist
-if not os.path.exists(REPORT_DIR):
-    os.makedirs(REPORT_DIR)
+if not os.path.exists(REPORT_DATA_DIR):
+    os.makedirs(REPORT_DATA_DIR)
 
-if not os.path.exists(REPORT_JSON):
-    with open(REPORT_JSON, "w") as f:
+if not os.path.exists(TESTS_JSON):
+    with open(TESTS_JSON, "w") as f:
         json.dump([], f)
 
 def test_cases(frame, dog, confidence, confidence_values, current_time, last_detected_time, last_detected_dog):
@@ -144,7 +146,7 @@ def test_cases(frame, dog, confidence, confidence_values, current_time, last_det
     # Save the frame and metadata if any test case is triggered
     if triggered_tests:
         filename = f"TestCase_{current_time.strftime('%Y%m%d%H%M%S')}.jpg"
-        filepath = os.path.join(REPORT_DIR, filename)
+        filepath = os.path.join(REPORT_DATA_DIR, filename)
         cv2.imwrite(filepath, frame)
 
         # Prepare the metadata
@@ -155,7 +157,7 @@ def test_cases(frame, dog, confidence, confidence_values, current_time, last_det
         }
 
         # Append the data to the JSON report
-        with open(REPORT_JSON, "r+") as f:
+        with open(TESTS_JSON, "r+") as f:
             data = json.load(f)
             data.append(test_data)
             f.seek(0)
@@ -171,7 +173,7 @@ def trigger_tests():
     """
     Manually trigger all test cases for debugging purposes.
     """
-    debug_frame = cv2.imread(f"{REPORT_DIR}/debug.jpg")  # Use a debug image for testing
+    debug_frame = cv2.imread(f"{REPORT_DATA_DIR}/debug.jpg")  # Use a debug image for testing
     if debug_frame is None:
         return "Debug image not found.", 404
 
@@ -214,6 +216,68 @@ def trigger_tests():
         time.sleep(.5)
 
     return "Test cases triggered. Check the JSON file."
+
+
+# Video Recording
+
+# Globals for video recording
+recording = False
+video_writer = None
+recording_thread = None
+record_lock = Lock()
+
+# Ensure the JSON file exists
+if not BUZZERS_JSON.exists():
+    with open(BUZZERS_JSON, "w") as f:
+        json.dump([], f)
+
+def start_recording(video_path, frame_rate=20.0, resolution=(640, 480)):
+    """
+    Start recording video in a separate thread.
+    """
+    global recording, video_writer, recording_thread
+
+    def record():
+        global video_writer
+        cap = cv2.VideoCapture(0)  # Use the same camera feed
+        while recording:
+            ret, frame = cap.read()
+            if ret:
+                video_writer.write(frame)
+        cap.release()
+
+    with record_lock:
+        if recording:
+            return  # Already recording
+
+        recording = True
+        video_writer = cv2.VideoWriter(
+            video_path,
+            cv2.VideoWriter_fourcc(*"XVID"),
+            frame_rate,
+            resolution
+        )
+        recording_thread = Thread(target=record)
+        recording_thread.start()
+
+def stop_recording():
+    """
+    Stop recording video.
+    """
+    global recording, video_writer, recording_thread
+
+    with record_lock:
+        if not recording:
+            return
+
+        recording = False
+        if recording_thread is not None:
+            recording_thread.join()
+        if video_writer is not None:
+            video_writer.release()
+        video_writer = None
+
+
 
 # END TEST CASES
 
@@ -264,6 +328,22 @@ def register_detection(dog, confidence):
             if last_mila_end_time:
                 log_message("Buffer ended. Nova is now being processed.")
                 last_mila_end_time = None  # Clear the buffer
+
+            # Start video recording for Nova
+            video_path = REPORT_DATA_DIR / f"Nova_{now.strftime('%Y%m%d%H%M%S')}.avi"
+            start_recording(str(video_path))
+
+            # Log to buzzers.json
+            with open(BUZZERS_JSON, "r+") as f:
+                data = json.load(f)
+                data.append({
+                    "start_time": now.isoformat(),
+                    "video_file": str(video_path),
+                    "confidence": confidence
+                })
+                f.seek(0)
+                json.dump(data, f, indent=4)
+
             return "Nova registered"
 
 # Send visit data to the PHP API
@@ -344,6 +424,22 @@ def main():
 
         # Finalize visit if no motion for DETECTION_TIMEOUT
         if time.time() - last_motion_time > DETECTION_TIMEOUT:
+            if current_visit["dog"] == "Nova":
+                # Stop video recording
+                stop_recording()
+
+                # Update buzzers.json with the end time
+                now = datetime.datetime.now()
+                with open(BUZZERS_JSON, "r+") as f:
+                    data = json.load(f)
+                    for entry in reversed(data):
+                        if entry["video_file"].endswith(f"Nova_{current_visit['start_time'].strftime('%Y%m%d%H%M%S')}.avi"):
+                            entry["end_time"] = now.isoformat()
+                            break
+                    f.seek(0)
+                    json.dump(data, f, indent=4)
+
+            # Send the API data and reset the visit
             if current_visit["dog"] is not None:
                 send_visit_to_api(
                     current_visit["dog"],
