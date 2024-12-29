@@ -154,6 +154,54 @@ def test_cases(frame, dog, confidence, confidence_values, current_time, last_det
     # Update the last detection details
     return current_time, dog
 
+@app.route("/trigger_tests", methods=["GET"])
+def trigger_tests():
+    """
+    Manually trigger all test cases for debugging purposes.
+    """
+    debug_frame = cv2.imread("static/debug.jpg")  # Use a debug image for testing
+    if debug_frame is None:
+        return "Debug image not found.", 404
+
+    # Mock data for triggering test cases
+    test_detections = [
+        {
+            "dog": "Mila",
+            "confidence": 80,  # Low confidence case
+            "confidence_values": [80, 30, 10],  # Confidence array for all classes
+            "message": "Low confidence for top class"
+        },
+        {
+            "dog": "Nova",
+            "confidence": 96,
+            "confidence_values": [96, 30, 28],  # High 2nd/3rd confidence
+            "message": "High confidence for 2nd/3rd class"
+        },
+        {
+            "dog": "Mila",
+            "confidence": 99,
+            "confidence_values": [99, 85, 10],  # Rapid switch from Mila to Nova
+            "message": "Rapid dog switching detected"
+        },
+    ]
+
+    current_time = datetime.datetime.now()
+    last_time = current_time - datetime.timedelta(seconds=1)
+
+    # Simulate test cases
+    for detection in test_detections:
+        test_cases(
+            debug_frame,
+            detection["dog"],
+            detection["confidence"],
+            detection["confidence_values"],
+            current_time,
+            last_time,
+            "Nova" if detection["dog"] == "Mila" else "Mila"  # Alternate previous dog
+        )
+
+    return "Test cases triggered. Check the JSON file."
+
 # END TEST CASES
 
 # Helper function to preprocess the frame for the model
