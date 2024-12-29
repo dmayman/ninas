@@ -244,13 +244,11 @@ def analyze_frame(frame):
     confidence = predictions[predicted_class]
     return class_labels[predicted_class], confidence
 
-def preprocess_image(image_path, input_size):
+def preprocess_image(img, input_size):
     """
     Preprocesses the input image to match the model's requirements by cropping to a square and resizing.
     """
-    img = cv2.imread(image_path)
-    if img is None:
-        raise ValueError(f"Image not found at {image_path}")
+    
     
     # Get the dimensions of the image
     height, width, _ = img.shape
@@ -275,12 +273,12 @@ def preprocess_image(image_path, input_size):
     return np.expand_dims(resized_img, axis=0)
 
 # Alt evaluation code
-def evaluate_image(image_path):
+def evaluate_image(image):
     """
     Evaluates the image using the TensorFlow Lite model.
     """
     input_size = (224, 224)  # Match the input size used during training
-    img = preprocess_image(image_path, input_size)
+    img = preprocess_image(image, input_size)
 
     interpreter.set_tensor(input_details[0]['index'], img)
     interpreter.invoke()
