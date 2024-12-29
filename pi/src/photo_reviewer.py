@@ -22,7 +22,7 @@ untagged_dir = photos_dir / "untagged"
 mila_dir = photos_dir / "Mila"
 nova_dir = photos_dir / "Nova"
 none_dir = photos_dir / "None"  # New "None" category
-test_cases_json = report_dir / "tests.json"  # Path to the tests.json file
+test_cases_json = "report" / "tests.json"  # Path to the tests.json file
 
 # Ensure directories exist
 for directory in [untagged_dir, mila_dir, nova_dir, none_dir, report_dir]:
