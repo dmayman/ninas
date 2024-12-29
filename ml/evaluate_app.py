@@ -1,108 +1,95 @@
+from flask import Flask, render_template
+from tflite_support.task import vision, core, processor
 import os
-import numpy as np
 import cv2
-import tensorflow as tf
-from flask import Flask, render_template, request, redirect, url_for
 
-# Load the TensorFlow Lite model
-interpreter = tf.lite.Interpreter(model_path="tm_dog_model/model2.tflite")
-interpreter.allocate_tensors()
-
-# Get input and output details
-input_details = interpreter.get_input_details()
-output_details = interpreter.get_output_details()
-
-def load_labels(labels_path):
-    """
-    Loads class labels from a labels.txt file.
-    """
-    with open(labels_path, "r") as file:
-        return [line.strip() for line in file.readlines()]
-
-# Load class labels from the labels.txt file
-labels_path = "tm_dog_model/labels.txt"  # Adjust the path as needed
-class_labels = load_labels(labels_path)
-
-# Folder containing test images
+# Paths for model and labels
+MODEL_PATH = "tm_dog_model/efficientnet_lite0.tflite"
 TEST_FOLDER = "test-photos/test-set-3"
+MAX_RESULTS = 3  # Number of classification results to display
+SCORE_THRESHOLD = 0.5  # Minimum confidence score for classifications
 
 # Create the Flask app
-app = Flask(__name__, static_folder=str(TEST_FOLDER))
+app = Flask(__name__, static_folder=TEST_FOLDER)
 app.config["TEST_FOLDER"] = TEST_FOLDER
 
-def preprocess_image(image_path, input_size):
+# Initialize the TensorFlow Lite model
+base_options = core.BaseOptions(
+    file_name=MODEL_PATH,
+    num_threads=4,
+)
+classification_options = processor.ClassificationOptions(
+    max_results=MAX_RESULTS, score_threshold=SCORE_THRESHOLD
+)
+options = vision.ImageClassifierOptions(
+    base_options=base_options, classification_options=classification_options
+)
+classifier = vision.ImageClassifier.create_from_options(options)
+
+
+def preprocess_and_classify(image_path):
     """
-    Preprocesses the input image to match the model's requirements by cropping to a square and resizing.
+    Preprocesses the input image and runs classification using TensorFlow Lite.
     """
-    img = cv2.imread(image_path)
-    if img is None:
+    # Load and preprocess the image
+    image = cv2.imread(image_path)
+    if image is None:
         raise ValueError(f"Image not found at {image_path}")
-    
-    # Get the dimensions of the image
-    height, width, _ = img.shape
+    rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-    # Determine the size of the square crop (smallest dimension)
-    crop_size = min(height, width)
+    # Convert to TensorImage
+    tensor_image = vision.TensorImage.create_from_array(rgb_image)
 
-    # Calculate the top-left corner of the crop
-    top = 0
-    left = 0
+    # Perform classification
+    results = classifier.classify(tensor_image)
 
-    # Crop the image to a square
-    cropped_img = img[top:top + crop_size, left:left + crop_size]
+    # Extract classification results
+    classifications = results.classifications[0].categories
+    classified_data = [
+        {
+            "class": category.category_name,
+            "confidence": round(category.score * 100, 2),
+        }
+        for category in classifications
+    ]
 
-    # Resize the cropped image to the input size
-    resized_img = cv2.resize(cropped_img, input_size)
+    # Return the top result and all classifications
+    top_result = classified_data[0] if classified_data else {"class": "Unknown", "confidence": 0}
+    return {"top_result": top_result, "all_results": classified_data}
 
-    # Ensure pixel values are UINT8 (0-255)
-    resized_img = resized_img.astype(np.uint8)
-
-    # Add a batch dimension
-    return np.expand_dims(resized_img, axis=0)
-
-def evaluate_image(image_path):
-    """
-    Evaluates the image using the TensorFlow Lite model.
-    """
-    input_size = (224, 224)  # Match the input size used during training
-    img = preprocess_image(image_path, input_size)
-
-    interpreter.set_tensor(input_details[0]['index'], img)
-    interpreter.invoke()
-
-    predictions = interpreter.get_tensor(output_details[0]['index'])[0]
-
-    # Ensure predictions are valid
-    predictions = np.nan_to_num(predictions, nan=0.0)  # Replace NaN values with 0
-    confidence_scores = {label: float(predictions[i] * 100) for i, label in enumerate(class_labels)}
-
-    return {
-        "class": max(confidence_scores, key=confidence_scores.get),  # Top class
-        "confidence_scores": confidence_scores
-    }
 
 @app.route("/")
 def index():
     """
     Displays the images in the test folder grouped by predicted class.
     """
-    grouped_images = {label: [] for label in class_labels}  # Group images by class
-    test_folder_path = os.path.join(app.config["TEST_FOLDER"])
+    grouped_images = {}
 
-    for filename in os.listdir(test_folder_path):
+    # Iterate through test folder images
+    for filename in os.listdir(TEST_FOLDER):
         if filename.lower().endswith((".jpg", ".jpeg", ".png")):
-            image_path = os.path.join(test_folder_path, filename)
+            image_path = os.path.join(TEST_FOLDER, filename)
 
             try:
-                result = evaluate_image(image_path)
-                grouped_images[result["class"]].append({
-                    "filename": filename,
-                    "confidence_scores": result["confidence_scores"]
-                })
+                result = preprocess_and_classify(image_path)
+                top_class = result["top_result"]["class"]
+
+                if top_class not in grouped_images:
+                    grouped_images[top_class] = []
+
+                grouped_images[top_class].append(
+                    {
+                        "filename": filename,
+                        "confidence": result["top_result"]["confidence"],
+                        "all_results": result["all_results"],
+                    }
+                )
             except Exception as e:
                 print(f"Error processing {filename}: {e}")
-    
-    return render_template("index.html", grouped_images=grouped_images, folder=TEST_FOLDER, class_labels=class_labels)
+
+    # Render results in the template
+    return render_template("index.html", grouped_images=grouped_images, folder=TEST_FOLDER)
+
 
 if __name__ == "__main__":
     app.run(debug=True)
