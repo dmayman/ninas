@@ -105,7 +105,7 @@ def test_cases():
                 relative_time = "just now"
 
         entry.append({
-            "absolute-time": absolute_time
+            "absolute-time": absolute_time,
             "relative-time": relative_time
         })
 
