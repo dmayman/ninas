@@ -104,10 +104,8 @@ def test_cases():
             else:
                 relative_time = "just now"
 
-        entry.append({
-            "absolute-time": absolute_time,
-            "relative-time": relative_time
-        })
+        entry["absolute-time"] = absolute_time,
+        entry["relative-time"] = relative_time
 
     return render_template("test_cases.html", test_cases=data)
 
