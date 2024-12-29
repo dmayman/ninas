@@ -10,7 +10,8 @@ import shutil  # For copying files
 def find_repo_root(start_path):
     current_path = Path(start_path).resolve()
     while not (current_path / ".repo_root").exists():
-        raise FileNotFoundError("Could not locate repo root marker (.repo_root)")
+        if current_path.parent == current_path:
+            raise FileNotFoundError("Could not locate repo root marker (.repo_root)")
         current_path = current_path.parent
     return current_path
 
