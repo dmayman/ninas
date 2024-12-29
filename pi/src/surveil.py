@@ -377,7 +377,7 @@ def main():
 
     while True:
         #_, curr_frame = cap.read()
-        _, curr_frame = cv2.imread("test-photos/test-set-3/Nova_1735085901_2.jpg")
+        curr_frame = cv2.imread("test-photos/test-set-3/Nova_1735085901_2.jpg")
 
         # Check for motion
         if detect_motion(prev_frame, curr_frame):
