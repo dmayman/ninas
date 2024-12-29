@@ -136,21 +136,12 @@ def main():
     current_visit = {"dog": None, "start_time": None, "end_time": None}
 
     while True:
-        # Measure time to capture frame
-        start_capture = time.time()
         _, curr_frame = cap.read()
-        capture_time = time.time() - start_capture
-        log_message(f"Time to capture frame: {capture_time:.4f} seconds")
 
         # Check for motion
         if detect_motion(prev_frame, curr_frame):
             log_message("Motion detected! Capturing frame...")
-
-            # Measure time to analyze frame
-            start_analysis = time.time()
             dog, confidence = analyze_frame(curr_frame)
-            analysis_time = time.time() - start_analysis
-            log_message(f"Time to analyze frame: {analysis_time:.4f} seconds")
 
             if confidence >= CONFIDENCE_THRESHOLD and dog != "None":
                 if current_visit["dog"] == dog:
@@ -195,7 +186,7 @@ def main():
             control_vibration("None")
 
         prev_frame = curr_frame
-        
+
 # Flask Route for Viewing Logs
 @app.route('/', methods=['GET'])
 def view_logs():
