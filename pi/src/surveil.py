@@ -55,6 +55,17 @@ except ImportError:
     print("RPi.GPIO not available. Vibration functionality disabled.")
     GPIO = None
 
+# Determine the absolute path to the shared folder
+def find_repo_root(start_path):
+    current_path = Path(start_path).resolve()
+    while not (current_path / ".repo_root").exists():
+        if current_path.parent == current_path:
+            raise FileNotFoundError("Could not locate repo root marker (.repo_root)")
+        current_path = current_path.parent
+    return current_path
+
+repo_root = find_repo_root(__file__)
+
 # Log a message to the log file
 def log_message(message):
     print(message)
@@ -92,7 +103,7 @@ def control_vibration(detected_dog):
 # TEST CASES
 
 # Directory and JSON file for test reports
-REPORT_DIR = "report/report-data/"
+REPORT_DIR = repo_root / "static" / "report-data/"
 REPORT_JSON = "report/tests.json"
 
 # Test case parameters
