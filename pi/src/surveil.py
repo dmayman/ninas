@@ -195,8 +195,8 @@ def trigger_tests():
             detection["dog"],
             detection["confidence"],
             detection["confidence_values"],
-            current_time,
-            last_time,
+            datetime.datetime.now(),
+            current_time - datetime.timedelta(seconds=1),
             "Nova" if detection["dog"] == "Mila" else "Mila"  # Alternate previous dog
         )
         time.sleep(.5)
