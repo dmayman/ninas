@@ -8,11 +8,14 @@ import numpy as np
 from flask import Flask, send_file
 import pytz
 
+# Master override to disable or enable vibration
+ENABLE_VIBRATION = False  # Set to True to enable vibration, False to disable
+
 # Configuration Variables
 CONFIDENCE_THRESHOLD = 90  # Confidence threshold for detection
 MOTION_DELAY_MS = 1  # Delay between frames in milliseconds
 MOTION_THRESHOLD = 0.01  # Motion area threshold (fraction of total frame size)
-VISIT_BUFFER_SECONDS = 10  # Buffer time to merge visits
+BUFFER_PERIOD_SECONDS = 120  # Buffer period (2 minutes)
 LOG_FILE = "logs/log.txt"  # Log file path
 
 # Flask App
@@ -67,6 +70,23 @@ def log_message(message):
             f.seek(0, 0)
             f.write(log_entry + content)
 
+# Vibrate bowl based on detection
+def control_vibration(detected_dog):
+    if not ENABLE_VIBRATION:
+        log_message("Vibration is disabled by override.")
+        return
+
+    if GPIO is None:
+        log_message("GPIO functionality is disabled. No vibration control.")
+        return
+
+    if detected_dog == "Nova":
+        GPIO.output(VIBRATE_GPIO_PIN, GPIO.HIGH)
+        log_message("Vibration activated for Nova.")
+    else:
+        GPIO.output(VIBRATE_GPIO_PIN, GPIO.LOW)
+        log_message("Vibration deactivated.")
+
 # Helper function to preprocess the frame for the model
 def preprocess_frame(frame, input_size):
     img = cv2.resize(frame, input_size)
@@ -92,17 +112,29 @@ def detect_motion(prev_frame, curr_frame):
     motion_area = cv2.countNonZero(thresh) / float(thresh.size)
     return motion_area > MOTION_THRESHOLD
 
-# Vibrate bowl based on detection
-def control_vibration(detected_dog):
-    return # vibration is currently turned off
-    if GPIO is None:
-        log_message("GPIO functionality is disabled. No vibration control.")
-        return
+# Buffer logic
+last_mila_end_time = None
 
-    if detected_dog == "Nova":
-        GPIO.output(VIBRATE_GPIO_PIN, GPIO.HIGH)
-    else:
-        GPIO.output(VIBRATE_GPIO_PIN, GPIO.LOW)
+def register_detection(dog, confidence):
+    global last_mila_end_time
+
+    now = datetime.datetime.now()
+
+    if dog == "Mila":
+        last_mila_end_time = now
+        buffer_end_time = last_mila_end_time + datetime.timedelta(seconds=BUFFER_PERIOD_SECONDS)
+        log_message(f"Buffer started due to Mila. Buffer will end at {buffer_end_time}")
+        return "Mila registered"
+
+    elif dog == "Nova":
+        if last_mila_end_time and (now - last_mila_end_time).total_seconds() < BUFFER_PERIOD_SECONDS:
+            log_message("Nova suppressed due to Mila's buffer.")
+            return "Nova suppressed"
+        else:
+            if last_mila_end_time:
+                log_message("Buffer ended. Nova is now being processed.")
+                last_mila_end_time = None  # Clear the buffer
+            return "Nova registered"
 
 # Send visit data to the PHP API
 def send_visit_to_api(dog, start_time, end_time):
@@ -144,31 +176,30 @@ def main():
             dog, confidence = analyze_frame(curr_frame)
 
             if confidence >= CONFIDENCE_THRESHOLD and dog != "None":
-                if current_visit["dog"] == dog:
-                    # Extend the current visit
-                    current_visit["end_time"] = datetime.datetime.now()
-                else:
-                    # Send the previous visit if it exists
-                    if current_visit["dog"] is not None:
-                        send_visit_to_api(
-                            current_visit["dog"],
-                            current_visit["start_time"],
-                            current_visit["end_time"]
-                        )
-                        log_message(f"{current_visit['dog']}'s visit complete.")
+                detection_result = register_detection(dog, confidence)
+                log_message(f"{detection_result}: {dog} with confidence {confidence:.2f}%")
 
-                    # Start a new visit
-                    current_visit = {
-                        "dog": dog,
-                        "start_time": datetime.datetime.now(),
-                        "end_time": datetime.datetime.now()
-                    }
-                    log_message(f"Starting new visit for {dog}.")
+                if detection_result == "Mila registered" or detection_result == "Nova registered":
+                    if current_visit["dog"] == dog:
+                        # Extend the current visit
+                        current_visit["end_time"] = datetime.datetime.now()
+                    else:
+                        # Send the previous visit if it exists
+                        if current_visit["dog"] is not None:
+                            send_visit_to_api(
+                                current_visit["dog"],
+                                current_visit["start_time"],
+                                current_visit["end_time"]
+                            )
+                            log_message(f"{current_visit['dog']}'s visit complete.")
 
-                log_message(f"Detected dog: {dog} (Confidence: {confidence:.2f}%)")
-
-            # Set vibration control based on detection
-            control_vibration(dog)
+                        # Start a new visit
+                        current_visit = {
+                            "dog": dog,
+                            "start_time": datetime.datetime.now(),
+                            "end_time": datetime.datetime.now()
+                        }
+                        log_message(f"Starting new visit for {dog}.")
 
             # Update the time of the last motion
             last_motion_time = time.time()
@@ -183,7 +214,6 @@ def main():
                 )
                 log_message(f"{current_visit['dog']}'s visit complete.")
                 current_visit = {"dog": None, "start_time": None, "end_time": None}
-            control_vibration("None")
 
         prev_frame = curr_frame
 
