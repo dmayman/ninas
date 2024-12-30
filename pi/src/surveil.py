@@ -407,19 +407,19 @@ def main():
                         }
                         log_message(f"Starting new visit for {dog}.")
 
-                        # Log to buzzers.json
-                        timestamp = now.isoformat()
-                        cv2.imwrite(f"{REPORT_DATA_DIR}/Buzzed_"{timestamp}, curr_frame)
-                        with open(BUZZERS_JSON, "r+") as f:
-                            data = json.load(f)
-                            data.append({
-                                "dog": dog,
-                                "start_time": timestamp,
-                                "confidence": result["confidence_scores"],
-                                "start_image": 
-                            })
-                            f.seek(0)
-                            json.dump(data, f, indent=4)
+                        # # Log to buzzers.json
+                        # timestamp = now.isoformat()
+                        # cv2.imwrite(f"{REPORT_DATA_DIR}/Buzzed_"{timestamp}, curr_frame)
+                        # with open(BUZZERS_JSON, "r+") as f:
+                        #     data = json.load(f)
+                        #     data.append({
+                        #         "dog": dog,
+                        #         "start_time": timestamp,
+                        #         "confidence": result["confidence_scores"],
+                        #         "start_image": 
+                        #     })
+                        #     f.seek(0)
+                        #     json.dump(data, f, indent=4)
 
             # Update the time of the last motion
             last_motion_time = time.time()
