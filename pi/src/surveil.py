@@ -96,15 +96,15 @@ def control_vibration(position):
             end_buzz_event()
     
     # Main evaluation
-    if not ENABLE_VIBRATION:
-        log_message("Vibration is disabled by override.")
-        return
-
     if GPIO is None:
         log_message("GPIO functionality is disabled. No vibration control.")
         return
 
     if position == "on":
+        if not ENABLE_VIBRATION:
+            log_message("Vibration is disabled by override.")
+        return
+    
         GPIO.output(VIBRATE_GPIO_PIN, GPIO.HIGH)
         log_message("Vibration activated for Nova.")
     else:
