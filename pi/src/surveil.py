@@ -641,24 +641,32 @@ def simulate_camera(dog):
     except ValueError as e:
         return str(e), 404
 
+last_frame_hash = None
 @app.route('/video_feed')
 def video_feed():
     """
-    Video streaming route that serves the current frame as an MJPEG stream.
+    Serve the current frame only if it has changed since the last request.
     """
-    def generate():
-        global curr_frame
-        while True:
-            if curr_frame is not None:
-                # Encode the frame as JPEG
-                _, buffer = cv2.imencode('.jpg', curr_frame)
-                frame = buffer.tobytes()
-                # Yield the frame as part of the multipart response
-                yield (b'--frame\r\n'
-                       b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-            # time.sleep(0.1)  # Adjust frame rate by setting a delay
+    global curr_frame, last_frame_hash
 
-    return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    # Encode the current frame
+    if curr_frame is not None:
+        _, buffer = cv2.imencode('.jpg', curr_frame)
+        frame_bytes = buffer.tobytes()
+        frame_hash = hash(frame_bytes)
+
+        # Check if the frame has changed
+        if frame_hash != last_frame_hash:
+            last_frame_hash = frame_hash
+            # Return the updated frame
+            return Response(
+                frame_bytes,
+                mimetype='image/jpeg'
+            )
+
+    # No new frame; wait briefly before retrying
+    # time.sleep(0.1)  # Simulate a delay for polling
+    return "", 204  # No content
 
 # Entry point for the script
 if __name__ == "__main__":
