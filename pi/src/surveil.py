@@ -356,6 +356,7 @@ def main():
     log_message("Starting niñas...")
     global cap
     cap = cv2.VideoCapture(0)  # Use camera 0
+    cap.set(cv2.CAP_PROP_FPS, 5)  # Reduce capture rate
     _, prev_frame = cap.read()
 
     last_detected_dog = None
