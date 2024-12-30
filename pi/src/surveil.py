@@ -518,7 +518,7 @@ def main():
                 break
 
         # Current time
-        current_time = datetime.datetime.now(),
+        current_time = datetime.datetime.now()
 
         # Check for motion
         if detect_motion(prev_frame, curr_frame):
@@ -641,33 +641,31 @@ def simulate_camera(dog):
     except ValueError as e:
         return str(e), 404
 
-last_frame_hash = None
+
 @app.route('/video_feed')
 def video_feed():
     """
-    Serve the current frame only if it has changed since the last request.
+    Serve the current frame as an MJPEG stream.
+    This implementation adds a small delay to avoid CPU overload and ensures thread-safe access to `curr_frame`.
     """
-    print ("serving video feed...")
-    global curr_frame, last_frame_hash
+    def generate():
+        global curr_frame
+        while True:
+            # Check if curr_frame is available
+            if curr_frame is not None:
+                # Encode the current frame as JPEG
+                _, buffer = cv2.imencode('.jpg', curr_frame)
+                frame = buffer.tobytes()
 
-    # Encode the current frame
-    if curr_frame is not None:
-        _, buffer = cv2.imencode('.jpg', curr_frame)
-        frame_bytes = buffer.tobytes()
-        frame_hash = hash(frame_bytes)
+                # Yield the frame as part of the multipart MJPEG stream
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
-        # Check if the frame has changed
-        if frame_hash != last_frame_hash:
-            last_frame_hash = frame_hash
-            # Return the updated frame
-            return Response(
-                frame_bytes,
-                mimetype='image/jpeg'
-            )
+            # Introduce a short delay to reduce CPU usage and allow other threads to run
+            time.sleep(0.1)
 
-    # No new frame; wait briefly before retrying
-    time.sleep(0.1)  # Simulate a delay for polling
-    return "", 204  # No content
+    # Return the MJPEG stream response
+    return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 # Entry point for the script
 if __name__ == "__main__":
