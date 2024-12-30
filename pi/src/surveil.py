@@ -618,7 +618,7 @@ def simulate_camera(dog):
             directory = f"test-photos/{dog}-dummy"
             update_simulated_images(directory)
             status_message = f"Simulating Camera for {dog}"
-
+        print(f"Use Dummy Images: {USE_DUMMY_IMAGES}")
         # Render HTML with video feed
         return render_template_string(
             """
