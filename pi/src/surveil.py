@@ -665,7 +665,7 @@ def video_feed():
             )
 
     # No new frame; wait briefly before retrying
-    # time.sleep(0.1)  # Simulate a delay for polling
+    time.sleep(0.1)  # Simulate a delay for polling
     return "", 204  # No content
 
 # Entry point for the script
