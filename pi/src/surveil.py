@@ -298,7 +298,7 @@ def end_buzz_event():
 
     now = datetime.datetime.now()
     current_buzz_event["end_time"] = now.isoformat()
-    log_message(f"Ended buzz event for {current_buzz_event['dog']} at {now}.")
+    log_message(f"Ended buzz event at {now}.")
 
     # Write the event to buzzers.json
     with open(BUZZERS_JSON, "r+") as f:
