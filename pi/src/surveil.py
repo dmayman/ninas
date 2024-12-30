@@ -538,7 +538,7 @@ def main():
                 triggered_tests += test1_rapid_switching(dog, current_time, last_detected_time, last_detected_dog) # test if dog rapidly switched
                 triggered_tests += test3_mixed_confidence(dog, confidence_scores) # test if dog passed but there were mixed confidence scores
                 if detection_result == "Nova suppressed":
-                    triggered_tests += "Nova suppressed due to Mila's buffer."
+                    triggered_tests += ["Nova suppressed due to Mila's buffer."]
 
                 # Proceed if a dog has been registered
                 if detection_result == "Mila registered" or detection_result == "Nova registered":
