@@ -108,7 +108,6 @@ def control_vibration(position):
         GPIO.output(VIBRATE_GPIO_PIN, GPIO.HIGH)
         log_message("Vibration activated for Nova.")
     else:
-        print(GPIO.input(VIBRATE_GPIO_PIN))
         if GPIO.input(VIBRATE_GPIO_PIN):
             log_message("Vibration deactivated.")
         GPIO.output(VIBRATE_GPIO_PIN, GPIO.LOW)
