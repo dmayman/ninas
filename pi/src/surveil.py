@@ -364,8 +364,8 @@ def main():
     current_visit = {"dog": None, "start_time": None, "end_time": None}
 
     while True:
-        #_, curr_frame = cap.read()
-        curr_frame = cv2.imread("test-photos/dummy.jpg")
+        _, curr_frame = cap.read()
+        # curr_frame = cv2.imread("test-photos/dummy.jpg")
 
         # Check for motion
         if detect_motion(prev_frame, curr_frame):
