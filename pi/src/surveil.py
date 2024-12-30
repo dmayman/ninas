@@ -108,8 +108,11 @@ def control_vibration(position):
         GPIO.output(VIBRATE_GPIO_PIN, GPIO.HIGH)
         log_message("Vibration activated for Nova.")
     else:
+        print(GPIO.input(VIBRATE_GPIO_PIN))
+        if GPIO.input(VIBRATE_GPIO_PIN):
+            log_message("Vibration deactivated.")
         GPIO.output(VIBRATE_GPIO_PIN, GPIO.LOW)
-        log_message("Vibration deactivated.")
+        
 
 
 # TEST CASES
@@ -573,7 +576,6 @@ def main():
 
         # Finalize visit if no motion for DETECTION_TIMEOUT
         if time.time() - last_motion_time > DETECTION_TIMEOUT:
-            print("here")
             control_vibration ("off")
 
             # Send the API data and reset the visit
