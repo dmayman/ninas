@@ -606,14 +606,43 @@ def simulate_camera(dog):
     """
     Updates the simulated images for the specified dog type.
     """
-    if {dog} == "off":
-        USE_DUMMY_IMAGES = False
-        return "Now using live camera feed."
-    
-    directory = f"test-photos/{dog}-dummy"
+
+    global curr_frame, USE_DUMMY_IMAGES
+    status_message = ''
     try:
-        update_simulated_images(directory)
-        return f"Simulated images updated for {dog}", 200
+        if dog == "off":
+            USE_DUMMY_IMAGES = False
+            status_message = "Now using live camera feed."
+        else:
+            directory = f"test-photos/{dog}-dummy"
+            update_simulated_images(directory)
+            status_message = f"Simulating Camera for {dog}"
+        
+        # Encode the current frame as a Base64 image
+        _, buffer = cv2.imencode('.jpg', curr_frame)
+        encoded_image = base64.b64encode(buffer).decode('utf-8')
+        img_src = f"data:image/jpeg;base64,{encoded_image}"
+
+        # Render the image in an HTML template
+        return render_template_string(
+            """
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Simulate Camera</title>
+            </head>
+            <body>
+                <h1>{{status_message}}</h1>
+                <img src="{{ img_src }}" alt="Simulated Frame" style="max-width:100%; height:auto;">
+                <p><a href="/simulate/{{ dog }}">Next Frame</a></p>
+            </body>
+            </html>
+            """,
+            dog=dog,
+            img_src=img_src
+        )
     except ValueError as e:
         return str(e), 404
 
