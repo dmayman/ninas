@@ -648,6 +648,7 @@ def video_feed():
     Serve the current frame as an MJPEG stream.
     This implementation adds a small delay to avoid CPU overload and ensures thread-safe access to `curr_frame`.
     """
+    print("serving video feed...")
     def generate():
         global curr_frame
         while True:
