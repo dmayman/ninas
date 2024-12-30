@@ -5,11 +5,12 @@ import requests
 import datetime
 import tflite_runtime.interpreter as tflite
 import numpy as np
-from flask import Flask, send_file
+from flask import Flask, send_file, render_template_string
 import pytz
 import json
 from pathlib import Path
 from threading import Thread, Lock
+import base64
 
 # Master override to disable or enable vibration
 ENABLE_VIBRATION = False  # Set to True to enable vibration, False to disable
