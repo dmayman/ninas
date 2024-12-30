@@ -369,7 +369,7 @@ def get_simulated_image():
     Cycles back to the first image after reaching the end of the list.
     """
     global active_images, current_image_index
-    print (get_simulated_image)
+    
     if not active_images:
         raise ValueError("No active images loaded. Call update_simulated_images() first.")
 
@@ -539,7 +539,7 @@ def main():
                 triggered_tests += test1_rapid_switching(dog, current_time, last_detected_time, last_detected_dog) # test if dog rapidly switched
                 triggered_tests += test3_mixed_confidence(dog, confidence_scores) # test if dog passed but there were mixed confidence scores
                 if detection_result == "Nova suppressed":
-                    trigger_tests += "Nova suppressed due to Mila's buffer."
+                    triggered_tests += "Nova suppressed due to Mila's buffer."
 
                 # Proceed if a dog has been registered
                 if detection_result == "Mila registered" or detection_result == "Nova registered":
