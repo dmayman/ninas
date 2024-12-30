@@ -126,6 +126,11 @@ SECOND_THIRD_CONFIDENCE_THRESHOLD = 25  # Threshold for 2nd/3rd class confidence
 
 current_buzz_event = None  # Holds the ongoing buzz event
 
+# For loading in dummy images
+USE_DUMMY_IMAGES = False
+active_images = []  # List of loaded images
+current_image_index = 0  # Current index in the active_images list
+
 # Ensure report directories and files exist
 if not os.path.exists(REPORT_DATA_DIR):
     os.makedirs(REPORT_DATA_DIR)
@@ -328,6 +333,43 @@ def add_frame_to_buzz_event(frame, confidence_values):
         }
     })
 
+# Updates the dummy images that get fed in lieu of actual captured frames
+def update_simulated_images(directory):
+    """
+    Updates the active images list based on the specified directory.
+    Resets the current image index to 0.
+    """
+    global active_images, current_image_index
+
+    USE_DUMMY_IMAGES = True
+
+    # Load all images from the directory
+    active_images = load_test_images(directory)
+    if not active_images:
+        raise ValueError(f"No valid images found in directory: {directory}")
+
+    # Reset the image index
+    current_image_index = 0
+    log_message(f"Updated simulated images from directory: {directory}")
+
+# Gets next dummy image in the queue
+def get_simulated_image():
+    """
+    Returns the next image in the active images list.
+    Cycles back to the first image after reaching the end of the list.
+    """
+    global active_images, current_image_index
+
+    if not active_images:
+        raise ValueError("No active images loaded. Call update_simulated_images() first.")
+
+    # Get the current image and increment the index
+    image = active_images[current_image_index]
+    current_image_index = (current_image_index + 1) % len(active_images)  # Cycle back to the start
+    return image
+
+
+
 # END TEST CASES
 
 
@@ -454,8 +496,15 @@ def main():
     current_visit = {"dog": None, "start_time": None, "end_time": None}
 
     while True:
-        _, curr_frame = cap.read()
-        # curr_frame = cv2.imread("test-photos/dummy.jpg")
+        if not USE_DUMMY_IMAGES:
+            _, curr_frame = cap.read()
+        else:
+            # Simulate getting the next frame from the active image set
+            try:
+                curr_frame = get_simulated_image()
+            except ValueError as e:
+                log_message(f"Simulation error: {e}")
+                break
 
         # Current time
         current_time = datetime.datetime.now(),
@@ -543,16 +592,21 @@ def main():
 def view_logs():
     return send_file(LOG_FILE, mimetype="text/plain")
 
-@app.route('/simulate_nova', methods=['GET'])
-def simulate_nova():
-    # Simulated data for Nova
-    dog = "Nova"
-    confidence = CONFIDENCE_THRESHOLD + 1  # Ensure it's above the threshold
-
-    # Call the register_detection function
-    result = register_detection(dog, confidence)
-
-    return f"Simulated detection result: {result}", 200
+@app.route('/simulate_camera/<dog>', methods=['GET'])
+def simulate_camera(dog):
+    """
+    Updates the simulated images for the specified dog type.
+    """
+    if {dog} == "off":
+        USE_DUMMY_IMAGES = False
+        return "Now using live camera feed."
+    
+    directory = f"test-photos/{dog}-dummy"
+    try:
+        update_simulated_images(directory)
+        return f"Simulated images updated for {dog}", 200
+    except ValueError as e:
+        return str(e), 404
 
 # Entry point for the script
 if __name__ == "__main__":
