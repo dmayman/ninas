@@ -369,7 +369,7 @@ def get_simulated_image():
     Cycles back to the first image after reaching the end of the list.
     """
     global active_images, current_image_index
-    
+    print (get_simulated_image)
     if not active_images:
         raise ValueError("No active images loaded. Call update_simulated_images() first.")
 
