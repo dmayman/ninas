@@ -85,7 +85,17 @@ def log_message(message):
             f.write(log_entry + content)
 
 # Vibrate bowl based on detection
-def control_vibration(detected_dog):
+def control_vibration(position):
+
+    # For buzz reporting only
+    if position == "on":
+        if not current_buzz_event:
+            start_buzz_event()
+    else:
+        if current_buzz_event:
+            end_buzz_event()
+    
+    # Main evaluation
     if not ENABLE_VIBRATION:
         log_message("Vibration is disabled by override.")
         return
@@ -94,7 +104,7 @@ def control_vibration(detected_dog):
         log_message("GPIO functionality is disabled. No vibration control.")
         return
 
-    if detected_dog == "Nova":
+    if position == "on":
         GPIO.output(VIBRATE_GPIO_PIN, GPIO.HIGH)
         log_message("Vibration activated for Nova.")
     else:
@@ -114,6 +124,8 @@ SWITCH_DETECTION_TIME = 1  # Time in seconds for quick switching between dogs
 LOW_CONFIDENCE_THRESHOLD = 95  # Threshold for low confidence
 SECOND_THIRD_CONFIDENCE_THRESHOLD = 25  # Threshold for 2nd/3rd class confidence
 
+current_buzz_event = None  # Holds the ongoing buzz event
+
 # Ensure report directories and files exist
 if not os.path.exists(REPORT_DATA_DIR):
     os.makedirs(REPORT_DATA_DIR)
@@ -122,53 +134,60 @@ if not os.path.exists(TESTS_JSON):
     with open(TESTS_JSON, "w") as f:
         json.dump([], f)
 
-def test_cases(frame, dog, confidence, confidence_values, current_time, last_detected_time, last_detected_dog):
-    """
-    Evaluates the frame against test cases and saves it if a case is triggered.
-    """
-    global last_mila_end_time
 
-    triggered_tests = []
+def save_test_case(frame, triggered_tests, confidence_values, timestamp, dog):
+    """
+    Saves the frame as an image, updates the JSON file, and logs the event.
+    """
+    # Generate filename and file path
+    filename = f"TestCase_{timestamp}.jpg"
+    filepath = os.path.join(REPORT_DATA_DIR, filename)
 
-    # Test Case 1: Rapid dog switching
+    # Save the frame
+    cv2.imwrite(filepath, frame)
+
+    # Prepare metadata
+    test_data = {
+        "file_path": filename,
+        "timestamp": timestamp,
+        "confidence_values": confidence_values,
+        "triggered_tests": triggered_tests,
+        "dog": dog
+    }
+
+    # Append the data to the JSON report
+    with open(TESTS_JSON, "r+") as f:
+        data = json.load(f)
+        data.append(test_data)
+        f.seek(0)
+        json.dump(data, f, indent=4)
+
+    log_message(f"Test case triggered. Saved to {filepath} with details: {test_data}")
+
+def test1_rapid_switching(dog, current_time, last_detected_time, last_detected_dog):
+    """
+    Test Case 1: Rapid dog switching.
+    """
     if last_detected_dog and dog != last_detected_dog and (current_time - last_detected_time).total_seconds() <= SWITCH_DETECTION_TIME:
-        triggered_tests.append("Rapid dog switching detected.")
+        return ["Rapid dog switching detected."]
+    return []
 
-    # Test Case 2: Low confidence for top class
-    if confidence < LOW_CONFIDENCE_THRESHOLD:
-        triggered_tests.append(f"Low confidence for top class: {confidence:.2f}%.")
+def test2_low_confidence(confidence):
+    """
+    Test Case 2: Low confidence for top class.
+    """
+    if confidence < LOW_CONFIDENCE_THRESHOLD and confidence > LOW_CONFIDENCE_THRESHOLD - 20:
+        return [f"Low confidence for top class: {confidence:.2f}%."]
+    return []
 
-    # Test Case 3: 2nd or 3rd confidence > 25%
+def test3_mixed_confidence(dog, confidence_values):
+    """
+    Test Case 3: 2nd or 3rd confidence > 25%.
+    """
     other_confidences = [value for key, value in confidence_values.items() if key != dog]
     if any(c > SECOND_THIRD_CONFIDENCE_THRESHOLD for c in other_confidences):
-        triggered_tests.append("High confidence for 2nd/3rd class.")
-
-    # Save the frame and metadata if any test case is triggered
-    if triggered_tests:
-        timestamp = current_time.strftime('%Y%m%d%H%M%S')
-        filename = f"TestCase_{timestamp}.jpg"
-        filepath = os.path.join(REPORT_DATA_DIR, filename)
-        cv2.imwrite(filepath, frame)
-
-        # Prepare the metadata
-        test_data = {
-            "file_path": filename,
-            "timestamp": timestamp,
-            "confidence_values": {class_labels[i]: confidence_values[i] for i in range(len(class_labels))},
-            "triggered_tests": triggered_tests
-        }
-
-        # Append the data to the JSON report
-        with open(TESTS_JSON, "r+") as f:
-            data = json.load(f)
-            data.append(test_data)
-            f.seek(0)
-            json.dump(data, f, indent=4)
-
-        log_message(f"Test case triggered. Saved to {filepath} with details: {test_data}")
-
-    # Update the last detection details
-    return current_time, dog
+        return ["High confidence for 2nd/3rd class."]
+    return []
 
 @app.route("/trigger_tests", methods=["GET"])
 def trigger_tests():
@@ -206,7 +225,33 @@ def trigger_tests():
 
     # Simulate test cases
     for detection in test_detections:
-        test_cases(
+        test1_rapid_switching(
+            debug_frame,
+            detection["dog"],
+            detection["confidence"],
+            detection["confidence_values"],
+            datetime.datetime.now(),
+            current_time - datetime.timedelta(seconds=1),
+            "Nova" if detection["dog"] == "Mila" else "Mila"  # Alternate previous dog
+        )
+        time.sleep(.5)
+
+    # Simulate test cases
+    for detection in test_detections:
+        test2_low_confidence(
+            debug_frame,
+            detection["dog"],
+            detection["confidence"],
+            detection["confidence_values"],
+            datetime.datetime.now(),
+            current_time - datetime.timedelta(seconds=1),
+            "Nova" if detection["dog"] == "Mila" else "Mila"  # Alternate previous dog
+        )
+        time.sleep(.5)
+    
+    # Simulate test cases
+    for detection in test_detections:
+        test3_mixed_confidence(
             debug_frame,
             detection["dog"],
             detection["confidence"],
@@ -220,29 +265,71 @@ def trigger_tests():
     return "Test cases triggered. Check the JSON file."
 
 
-# Ensure the BUZZERS JSON file exists
-if not BUZZERS_JSON.exists():
-    with open(BUZZERS_JSON, "w") as f:
-        json.dump([], f)
+def start_buzz_event():
+    """
+    Starts a new buzz event for Nova.
+    """
+    global current_buzz_event
+    now = datetime.datetime.now()
+
+    current_buzz_event = {
+        "start_time": now.isoformat(),
+        "end_time": None,
+        "frames": []
+    }
+    log_message(f"Started new buzz event at {now}.")
+
+def end_buzz_event():
+    """
+    Ends the current buzz event and writes it to buzzers.json.
+    """
+    global current_buzz_event, BUZZERS_JSON
+
+    if not current_buzz_event:
+        return
+
+    now = datetime.datetime.now()
+    current_buzz_event["end_time"] = now.isoformat()
+    log_message(f"Ended buzz event for {current_buzz_event['dog']} at {now}.")
+
+    # Write the event to buzzers.json
+    with open(BUZZERS_JSON, "r+") as f:
+        data = json.load(f)
+        data.append(current_buzz_event)
+        f.seek(0)
+        json.dump(data, f, indent=4)
+
+    current_buzz_event = None  # Reset the current event
+
+def add_frame_to_buzz_event(frame, confidence_values):
+    """
+    Adds frame data to the current buzz event.
+    """
+    global current_buzz_event, REPORT_DATA_DIR
+
+    if not current_buzz_event:
+        return
+
+    # Generate a unique filename for the frame
+    timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+    filename = f"BuzzFrame_{timestamp}.jpg"
+    filepath = os.path.join(REPORT_DATA_DIR, filename)
+
+    # Save the frame
+    cv2.imwrite(filepath, frame)
+
+    # Append frame data to the event
+    current_buzz_event["frames"].append({
+        "filename": filename,
+        "confidence_values": {
+            "Mila" : confidence_values.get("Mila", 0.0),
+            "Nova" : confidence_values.get("Nova", 0.0),
+            "None" : confidence_values.get("None", 0.0)
+        }
+    })
 
 # END TEST CASES
 
-# Helper function to preprocess the frame for the model
-def preprocess_frame(frame, input_size):
-    img = cv2.resize(frame, input_size)
-    img = img.astype(np.uint8)
-    return np.expand_dims(img, axis=0)
-
-# Analyze a single frame using the TensorFlow Lite model
-def analyze_frame(frame):
-    input_size = (224, 224)
-    processed_frame = preprocess_frame(frame, input_size)
-    interpreter.set_tensor(input_details[0]['index'], processed_frame)
-    interpreter.invoke()
-    predictions = interpreter.get_tensor(output_details[0]['index'])[0]
-    predicted_class = np.argmax(predictions)
-    confidence = predictions[predicted_class]
-    return class_labels[predicted_class], confidence
 
 def preprocess_image(img, input_size):
     """
@@ -272,7 +359,6 @@ def preprocess_image(img, input_size):
     # Add a batch dimension
     return np.expand_dims(resized_img, axis=0)
 
-# Alt evaluation code
 def evaluate_image(image):
     """
     Evaluates the image using the TensorFlow Lite model.
@@ -308,6 +394,7 @@ def detect_motion(prev_frame, curr_frame):
 # Buffer logic
 last_mila_end_time = None
 
+# Determine if the next visit should begin based on a buffer logic
 def register_detection(dog, confidence):
     global last_mila_end_time
 
@@ -316,7 +403,8 @@ def register_detection(dog, confidence):
     if dog == "Mila":
         last_mila_end_time = now
         buffer_end_time = last_mila_end_time + datetime.timedelta(seconds=BUFFER_PERIOD_SECONDS)
-        log_message(f"Buffer started due to Mila. Buffer will end at {buffer_end_time}")
+        # log_message(f"Buffer started due to Mila. Buffer will end at {buffer_end_time}")
+        control_vibration("off")
         return "Mila registered"
 
     elif dog == "Nova":
@@ -325,9 +413,10 @@ def register_detection(dog, confidence):
             return "Nova suppressed"
         else:
             if last_mila_end_time:
-                log_message("Buffer ended. Nova is now being processed.")
+                log_message("Mila buffer ended. Nova is now being processed.")
                 last_mila_end_time = None  # Clear the buffer
-
+            
+            control_vibration("on");
             return "Nova registered"
 
 # Send visit data to the PHP API
@@ -356,7 +445,7 @@ def main():
     log_message("Starting niñas...")
     global cap
     cap = cv2.VideoCapture(0)  # Use camera 0
-    cap.set(cv2.CAP_PROP_FPS, 5)  # Reduce capture rate
+    cap.set(cv2.CAP_PROP_FPS, 5)  # Reduce capture rate for performance
     _, prev_frame = cap.read()
 
     last_detected_dog = None
@@ -368,30 +457,43 @@ def main():
         _, curr_frame = cap.read()
         # curr_frame = cv2.imread("test-photos/dummy.jpg")
 
+        # Current time
+        current_time = datetime.datetime.now(),
+
         # Check for motion
         if detect_motion(prev_frame, curr_frame):
-            log_message("Motion detected! Capturing frame...")
+            log_message("Motion detected! Evaluating frame...")
             result = evaluate_image(curr_frame)
-            print(result)
             dog = result["class"]
-            confidence = result["confidence_scores"][result["class"]]
+            confidence_scores = result["confidence_scores"]
+            confidence = confidence_scores[dog]
+            
+            # Test cases
+            triggered_tests = []
+            triggered_tests += test2_low_confidence(confidence) # test if there was slightly lower confidence than required
 
             if confidence >= CONFIDENCE_THRESHOLD and dog != "None":
                 detection_result = register_detection(dog, confidence)
-                log_message(f"{detection_result}: {dog} with confidence {confidence:.2f}% {result['confidence_scores']}")
+                log_message(f"{detection_result}: {dog} with confidence {confidence:.2f}% {confidence_scores}")
 
-                # Run test cases on the frame
-                current_time = datetime.datetime.now()
-                last_detected_time, last_detected_dog = test_cases(
-                    curr_frame, dog, confidence, result["confidence_scores"], current_time, last_detected_time, last_detected_dog
-                )
+                # Tests
+                triggered_tests += test1_rapid_switching(dog, current_time, last_detected_time, last_detected_dog) # test if dog rapidly switched
+                triggered_tests += test3_mixed_confidence(dog, confidence_scores) # test if dog passed but there were mixed confidence scores
+                if detection_result == "Nova suppressed":
+                    trigger_tests += "Nova suppressed due to Mila's buffer."
 
+                # Proceed if a dog has been registered
                 if detection_result == "Mila registered" or detection_result == "Nova registered":
+
+                    # Tests: Add frame to current buzz event
+                    if dog == "Nova":
+                        add_frame_to_buzz_event(curr_frame, confidence_scores)
+
                     if current_visit["dog"] == dog:
-                        # Extend the current visit
+                        # Same dog, so extend the current visit
                         current_visit["end_time"] = datetime.datetime.now()
                     else:
-                        # Send the previous visit if it exists
+                        # New dog, so finish and send the previous visit if it exists
                         if current_visit["dog"] is not None:
                             send_visit_to_api(
                                 current_visit["dog"],
@@ -403,42 +505,26 @@ def main():
                         # Start a new visit
                         current_visit = {
                             "dog": dog,
-                            "start_time": datetime.datetime.now(),
-                            "end_time": datetime.datetime.now()
+                            "start_time": current_time,
+                            "end_time": current_time
                         }
                         log_message(f"Starting new visit for {dog}.")
 
-                        # # Log to buzzers.json
-                        # timestamp = now.isoformat()
-                        # cv2.imwrite(f"{REPORT_DATA_DIR}/Buzzed_"{timestamp}, curr_frame)
-                        # with open(BUZZERS_JSON, "r+") as f:
-                        #     data = json.load(f)
-                        #     data.append({
-                        #         "dog": dog,
-                        #         "start_time": timestamp,
-                        #         "confidence": result["confidence_scores"],
-                        #         "start_image": 
-                        #     })
-                        #     f.seek(0)
-                        #     json.dump(data, f, indent=4)
+            # Vibration stops as soon as None is detected confidently
+            elif confidence >= CONFIDENCE_THRESHOLD and dog == "None":
+                control_vibration("off")
 
+            # Save the frame if any test case is triggered
+            if triggered_tests:
+                timestamp = current_time.strftime('%Y%m%d%H%M%S')
+                save_test_case(curr_frame, triggered_tests, confidence_scores, timestamp, dog)
+            
             # Update the time of the last motion
             last_motion_time = time.time()
 
         # Finalize visit if no motion for DETECTION_TIMEOUT
         if time.time() - last_motion_time > DETECTION_TIMEOUT:
-            # if current_visit["dog"] == "Nova":
-
-            #     # Update buzzers.json with the end time
-            #     now = datetime.datetime.now()
-            #     with open(BUZZERS_JSON, "r+") as f:
-            #         data = json.load(f)
-            #         for entry in reversed(data):
-            #             if entry["video_file"].endswith(f"Nova_{current_visit['start_time'].strftime('%Y%m%d%H%M%S')}.avi"):
-            #                 entry["end_time"] = now.isoformat()
-            #                 break
-            #         f.seek(0)
-            #         json.dump(data, f, indent=4)
+            control_vibration ("off")
 
             # Send the API data and reset the visit
             if current_visit["dog"] is not None:
