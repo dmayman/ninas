@@ -369,7 +369,6 @@ def get_simulated_image():
     Cycles back to the first image after reaching the end of the list.
     """
     global active_images, current_image_index
-    print (get_simulated_image)
     if not active_images:
         raise ValueError("No active images loaded. Call update_simulated_images() first.")
 
@@ -506,7 +505,6 @@ def main():
     current_visit = {"dog": None, "start_time": None, "end_time": None}
 
     while True:
-        print(f"USE_DUMMY_IMAGES: {USE_DUMMY_IMAGES}")
         if USE_DUMMY_IMAGES == False:
             _, curr_frame = cap.read()
         else:
