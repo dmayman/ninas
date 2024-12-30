@@ -335,6 +335,13 @@ def add_frame_to_buzz_event(frame, confidence_values):
         }
     })
 
+def load_test_images(directory):
+    """
+    Loads all images from the specified directory in sorted order.
+    """
+    image_paths = sorted(Path(directory).glob("*.jpg"))
+    return [cv2.imread(str(image_path)) for image_path in image_paths if cv2.imread(str(image_path)) is not None]
+
 # Updates the dummy images that get fed in lieu of actual captured frames
 def update_simulated_images(directory):
     """
