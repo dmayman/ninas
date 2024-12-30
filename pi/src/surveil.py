@@ -647,6 +647,7 @@ def video_feed():
     """
     Serve the current frame only if it has changed since the last request.
     """
+    print ("serving video feed...")
     global curr_frame, last_frame_hash
 
     # Encode the current frame
