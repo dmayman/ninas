@@ -494,7 +494,7 @@ def send_visit_to_api(dog, start_time, end_time):
 # Main function for motion detection and visit tracking
 def main():
     log_message("Starting niñas...")
-    global cap
+    global cap, curr_frame
     cap = cv2.VideoCapture(0)  # Use camera 0
     cap.set(cv2.CAP_PROP_FPS, 5)  # Reduce capture rate for performance
     _, prev_frame = cap.read()
