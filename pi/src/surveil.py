@@ -573,6 +573,7 @@ def main():
 
         # Finalize visit if no motion for DETECTION_TIMEOUT
         if time.time() - last_motion_time > DETECTION_TIMEOUT:
+            print("here")
             control_vibration ("off")
 
             # Send the API data and reset the visit
