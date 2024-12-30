@@ -5,7 +5,7 @@ import requests
 import datetime
 import tflite_runtime.interpreter as tflite
 import numpy as np
-from flask import Flask, send_file, render_template_string
+from flask import Flask, send_file, render_template_string, Response
 import pytz
 import json
 from pathlib import Path
@@ -605,9 +605,8 @@ def view_logs():
 @app.route('/simulate/<dog>', methods=['GET'])
 def simulate_camera(dog):
     """
-    Updates the simulated images for the specified dog type.
+    Updates the simulated images for the specified dog type and renders the video stream.
     """
-
     global curr_frame, USE_DUMMY_IMAGES
     status_message = ''
     try:
@@ -619,13 +618,8 @@ def simulate_camera(dog):
             directory = f"test-photos/{dog}-dummy"
             update_simulated_images(directory)
             status_message = f"Simulating Camera for {dog}"
-        
-        # Encode the current frame as a Base64 image
-        _, buffer = cv2.imencode('.jpg', curr_frame)
-        encoded_image = base64.b64encode(buffer).decode('utf-8')
-        img_src = f"data:image/jpeg;base64,{encoded_image}"
 
-        # Render the image in an HTML template
+        # Render HTML with video feed
         return render_template_string(
             """
             <!DOCTYPE html>
@@ -637,16 +631,33 @@ def simulate_camera(dog):
             </head>
             <body>
                 <h1>{{status_message}}</h1>
-                <img src="{{ img_src }}" alt="Simulated Frame" style="max-width:100%; height:auto;">
-                <p><a href="/simulate/{{ dog }}">Next Frame</a></p>
+                <img src="/video_feed" alt="Simulated Stream" style="max-width:100%; height:auto;">
             </body>
             </html>
             """,
-            dog=dog,
-            img_src=img_src
+            status_message=status_message
         )
     except ValueError as e:
         return str(e), 404
+
+@app.route('/video_feed')
+def video_feed():
+    """
+    Video streaming route that serves the current frame as an MJPEG stream.
+    """
+    def generate():
+        global curr_frame
+        while True:
+            if curr_frame is not None:
+                # Encode the frame as JPEG
+                _, buffer = cv2.imencode('.jpg', curr_frame)
+                frame = buffer.tobytes()
+                # Yield the frame as part of the multipart response
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+            # time.sleep(0.1)  # Adjust frame rate by setting a delay
+
+    return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 # Entry point for the script
 if __name__ == "__main__":
