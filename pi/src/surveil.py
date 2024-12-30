@@ -672,8 +672,8 @@ def video_feed():
 if __name__ == "__main__":
     import threading
     try:
-        # Run Flask app in a separate thread
-        threading.Thread(target=lambda: app.run(host='0.0.0.0', port=5000)).start()
+        # Run Flask app in a separate thread with threading enabled
+        threading.Thread(target=lambda: app.run(host="0.0.0.0", port=5000, threaded=True)).start()
         main()
     except KeyboardInterrupt:
         if GPIO:
