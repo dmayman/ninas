@@ -349,7 +349,7 @@ def update_simulated_images(directory):
     Updates the active images list based on the specified directory.
     Resets the current image index to 0.
     """
-    global active_images, current_image_index
+    global active_images, current_image_index, USE_DUMMY_IMAGES
 
     USE_DUMMY_IMAGES = True
 
