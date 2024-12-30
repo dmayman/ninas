@@ -506,7 +506,7 @@ def main():
     current_visit = {"dog": None, "start_time": None, "end_time": None}
 
     while True:
-        if not USE_DUMMY_IMAGES:
+        if USE_DUMMY_IMAGES == False:
             _, curr_frame = cap.read()
         else:
             # Simulate getting the next frame from the active image set
