@@ -592,7 +592,7 @@ def main():
 def view_logs():
     return send_file(LOG_FILE, mimetype="text/plain")
 
-@app.route('/simulate_camera/<dog>', methods=['GET'])
+@app.route('/simulate/<dog>', methods=['GET'])
 def simulate_camera(dog):
     """
     Updates the simulated images for the specified dog type.
