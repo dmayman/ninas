@@ -495,7 +495,7 @@ def send_visit_to_api(dog, start_time, end_time):
 # Main function for motion detection and visit tracking
 def main():
     log_message("Starting niñas...")
-    global cap, curr_frame
+    global cap, curr_frame, USE_DUMMY_IMAGES
     cap = cv2.VideoCapture(0)  # Use camera 0
     cap.set(cv2.CAP_PROP_FPS, 5)  # Reduce capture rate for performance
     _, prev_frame = cap.read()
@@ -618,7 +618,7 @@ def simulate_camera(dog):
             directory = f"test-photos/{dog}-dummy"
             update_simulated_images(directory)
             status_message = f"Simulating Camera for {dog}"
-        print(f"Use Dummy Images: {USE_DUMMY_IMAGES}")
+
         # Render HTML with video feed
         return render_template_string(
             """
@@ -631,7 +631,6 @@ def simulate_camera(dog):
             </head>
             <body>
                 <h1>{{status_message}}</h1>
-                <h2>Use Dummy Images: {{USE_DUMMY_IMAGES}}</h2>
                 <img src="/video_feed" alt="Simulated Stream" style="max-width:100%; height:auto;">
             </body>
             </html>
