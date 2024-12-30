@@ -615,6 +615,7 @@ def simulate_camera(dog):
             USE_DUMMY_IMAGES = False
             status_message = "Now using live camera feed."
         else:
+            USE_DUMMY_IMAGES = True
             directory = f"test-photos/{dog}-dummy"
             update_simulated_images(directory)
             status_message = f"Simulating Camera for {dog}"
