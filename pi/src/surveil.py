@@ -631,6 +631,7 @@ def simulate_camera(dog):
             </head>
             <body>
                 <h1>{{status_message}}</h1>
+                <h2>Use Dummy Images: {{USE_DUMMY_IMAGES}}</h2>
                 <img src="/video_feed" alt="Simulated Stream" style="max-width:100%; height:auto;">
             </body>
             </html>
