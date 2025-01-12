@@ -1,5 +1,5 @@
 from modules.utils import json_exists
-from config import TESTS_JSON, REPORT_DATA_DIR, BUZZERS_JSON_PATH
+from config import TESTS_JSON_PATH, REPORT_DATA_DIR, BUZZERS_JSON_PATH
 import cv2
 import os
 from modules.logger import logger
@@ -10,7 +10,7 @@ import datetime
 from pathlib import Path
 
 # Ensure the required directories and files exist
-json_exists(TESTS_JSON)
+json_exists(TESTS_JSON_PATH)
 json_exists(BUZZERS_JSON_PATH)
 
 def save_test_case(frame, triggered_tests, confidence_values, timestamp, dog):
@@ -34,7 +34,7 @@ def save_test_case(frame, triggered_tests, confidence_values, timestamp, dog):
     }
 
     # Append the data to the JSON report
-    with open(TESTS_JSON, "r+") as f:
+    with open(TESTS_JSON_PATH, "r+") as f:
         data = json.load(f)
         data.append(test_data)
         f.seek(0)
