@@ -49,7 +49,7 @@ def new_visit(dog):
     """
     app_state.current_visit["dog"] = dog
     app_state.current_visit["start_time"] = datetime.datetime.now()
-    app_state.current_visit["end_time"] = None
+    app_state.current_visit["end_time"] = datetime.datetime.now()
     logger.info(f"Starting new visit for {dog}.")
 
 def finalize_visit():
