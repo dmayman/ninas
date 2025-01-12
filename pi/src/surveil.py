@@ -23,7 +23,7 @@ BUFFER_PERIOD_SECONDS = 120  # Buffer period (2 minutes)
 LOG_FILE = "logs/log.txt"  # Log file path
 
 # Flask App
-app = Flask(__name__)
+app = Flask(__name__)   
 
 # TensorFlow Lite model setup
 interpreter = tflite.Interpreter(model_path="tm_dog_model/model.tflite")
