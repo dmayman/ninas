@@ -34,13 +34,12 @@ def main():
 
         current_time = datetime.datetime.now()
 
-        # Evaluate if Mila's safety buffer should be active
-        if state.last_mila_end_time is not None and (current_time - state.last_mila_end_time).total_seconds() < SAFETY_BUFFER:
-            state.safety_buffer_active = True
-            logger.info("Mila's safety buffer is now ON.")
-        else:
-            state.safety_buffer_active = False
-            logger.info("Mila's safety buffer is now OFF.")
+        # Evaluate and flip Mila's safety buffer status if needed
+        new_safety_buffer_status = state.last_mila_end_time is not None and (current_time - state.last_mila_end_time).total_seconds() < SAFETY_BUFFER
+        if new_safety_buffer_status != state.safety_buffer_active:
+            state.safety_buffer_active = new_safety_buffer_status
+            status = "ON" if state.safety_buffer_active else "OFF"
+            logger.info(f"Mila's safety buffer is now {status}.")
 
         # Check for motion before running inference
         if detect_motion(state.prev_frame, state.curr_frame):
