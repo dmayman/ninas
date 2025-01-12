@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import tflite_runtime.interpreter as tflite
 from modules.state import app_state as state
-from config import MODEL_PATH, INPUT_SIZE, CLASS_LABELS, EVALUATE_CYCLES, MOTION_THRESHOLD
+from config import MODEL_PATH, INPUT_SIZE, CLASS_LABELS, VERIFY_TIMES, MOTION_THRESHOLD
 from modules.logger import logger
 
 # Initialize TensorFlow Lite model
@@ -37,7 +37,7 @@ def evaluate_frames():
     confidence_sums = {label: 0.0 for label in CLASS_LABELS}  # Sum of confidence scores for averaging
     confidence_averages = {label: 0.0 for label in CLASS_LABELS}  # Averaged confidence scores
 
-    for idx in range(EVALUATE_CYCLES):
+    for idx in range(VERIFY_TIMES):
         logger.debug(f"Evaluating frame {idx}...")
         
         _, state.curr_frame = state.cap.read() if idx else (None, state.curr_frame)  # Read a new frame if idx > 0
