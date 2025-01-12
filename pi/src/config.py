@@ -1,5 +1,5 @@
 # General settings
-LOG_FILE = "logs/log.txt"  # Path to the log file
+LOG_FILE = "logs/app.log"  # Path to the log file
 
 # API settings
 API_URL = "https://ninas.davidmayman.com/api/record_visit.php"
