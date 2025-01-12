@@ -70,5 +70,5 @@ def evaluate_frames():
 
     return {
         "class": last_top_class,  # Final detected class
-        "confidence_scores": confidence_averages  # Averaged confidence scores for all classes
+        "confidence_scores": confidence_averages # Averaged confidence scores for all classes
     }
