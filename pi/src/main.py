@@ -4,7 +4,6 @@ import cv2
 from config import CONFIDENCE_THRESHOLD, DETECTION_TIMEOUT, SAFETY_BUFFER, VISIT_TIMEOUT, VIBRATE_GPIO_PIN
 from modules.state import app_state as state  # Importing the shared app state object
 from modules.logger import logger  # Importing the shared logger
-import modules.motion as motion
 from modules.image_processing import evaluate_frames, detect_motion
 import modules.visits as visits
 import modules.api as api
