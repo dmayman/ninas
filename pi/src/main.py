@@ -58,8 +58,11 @@ def main():
             if confidence >= CONFIDENCE_THRESHOLD and dog != "None":
                 
                 # TEMP Record an image of the detected dog
-                filename = f"{repo_root}/{REPORT_DATA_DIR}/{dog}-{current_time.strftime('%Y%m%d%H%M%S')}.jpg"
-                cv2.imwrite(filename, state.curr_frame)
+                try:
+                    filename = f"{repo_root}/{REPORT_DATA_DIR}/{dog}-{current_time.strftime('%Y%m%d%H%M%S')}.jpg"
+                    cv2.imwrite(filename, state.curr_frame)
+                except Exception as e:
+                    logger.error(f"Failed to save image: {e}")
 
                 detection_result = visits.register_detection(dog)
                 logger.info(f"{detection_result}: {dog} with confidence {confidence:.2f}% {confidence_scores}")
