@@ -2,8 +2,6 @@ from config import VIBRATE_GPIO_PIN, ENABLE_VIBRATION
 from modules.testing import start_buzz_event, end_buzz_event
 from modules.state import app_state
 from modules.logger import logger
-from modules.state import gpio
-from modules.testing import testing
 
 # Initialize the GPIO library
 try:
