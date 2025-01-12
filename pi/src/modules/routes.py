@@ -76,7 +76,7 @@ def trigger_tests():
     
     # Simulate test cases
     for detection in test_detections:
-       test.test3_mixed_confidence(
+        test.test3_mixed_confidence(
             debug_frame,
             detection["dog"],
             detection["confidence"],
@@ -84,7 +84,7 @@ def trigger_tests():
             datetime.datetime.now(),
             current_time - datetime.timedelta(seconds=1),
             "Nova" if detection["dog"] == "Mila" else "Mila"  # Alternate previous dog
-        )
+            )
         time.sleep(.5)
     return "Test cases triggered. Check the JSON file."
 
