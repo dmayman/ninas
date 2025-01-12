@@ -9,7 +9,7 @@ import modules.visits as visits
 import modules.api as api
 import modules.testing as testing
 import modules.vibration as vibration
-from modules.utils import get_repo_path
+from modules.utils import find_repo_root
 from modules.routes import app
 
 def main():
@@ -58,7 +58,7 @@ def main():
             if confidence >= CONFIDENCE_THRESHOLD and dog != "None":
                 
                 # TEMP Record an image of the detected dog
-                filename = f"{get_repo_path()}/{REPORT_DATA_DIR}/{dog}-{current_time.strftime('%Y%m%d%H%M%S')}.jpg"
+                filename = f"{find_repo_root()}/{REPORT_DATA_DIR}/{dog}-{current_time.strftime('%Y%m%d%H%M%S')}.jpg"
                 cv2.imwrite(filename, state.curr_frame)
 
                 detection_result = visits.register_detection(dog)
