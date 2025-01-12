@@ -1,7 +1,7 @@
 import time
 import datetime
 import cv2
-from config import CONFIDENCE_THRESHOLD, DETECTION_TIMEOUT, SAFETY_BUFFER, VISIT_TIMEOUT, VIBRATE_GPIO_PIN
+from config import CONFIDENCE_THRESHOLD, DETECTION_TIMEOUT, SAFETY_BUFFER, VISIT_TIMEOUT, VIBRATE_GPIO_PIN, REPORT_DATA_DIR
 from modules.state import app_state as state  # Importing the shared app state object
 from modules.logger import logger  # Importing the shared logger
 from modules.image_processing import evaluate_frames, detect_motion
@@ -9,6 +9,7 @@ import modules.visits as visits
 import modules.api as api
 import modules.testing as testing
 import modules.vibration as vibration
+from modules.utils import get_repo_path
 from modules.routes import app
 
 def main():
@@ -55,6 +56,11 @@ def main():
 
             # Continue processing if confidence is above threshold for a dog
             if confidence >= CONFIDENCE_THRESHOLD and dog != "None":
+                
+                # TEMP Record an image of the detected dog
+                filename = f"{get_repo_path()}/{REPORT_DATA_DIR}/{dog}-{current_time.strftime('%Y%m%d%H%M%S')}.jpg"
+                cv2.imwrite(filename, state.curr_frame)
+
                 detection_result = visits.register_detection(dog)
                 logger.info(f"{detection_result}: {dog} with confidence {confidence:.2f}% {confidence_scores}")
 
