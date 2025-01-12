@@ -103,7 +103,7 @@ def simulate_camera(dog):
         else:
             USE_DUMMY_IMAGES = True
             directory = f"test-photos/{dog}-dummy"
-            update_simulated_images(directory)
+            test.update_simulated_images(directory)
             status_message = f"Simulating Camera for {dog}"
 
         # Render HTML with video feed
