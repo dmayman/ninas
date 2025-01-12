@@ -11,7 +11,7 @@ app = Flask(__name__)
 # Flask Route for Viewing Logs
 @app.route('/', methods=['GET'])
 def view_logs():
-    return send_file(LOG_FILE, mimetype="text/plain")
+    return send_file(f"../{LOG_FILE}", mimetype="text/plain")
 
 # Trigger test cases by sending test data frames
 @app.route("/trigger_tests", methods=["GET"])
