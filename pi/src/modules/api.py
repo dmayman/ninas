@@ -29,8 +29,8 @@ def send_visit_to_api(dog, start_time, end_time):
     try:
         response = requests.post(API_URL, headers=headers, json=payload)
         response.raise_for_status()
-        logger.info(f"Visit successfully sent for {dog}: {response.json()}")
+        logger.info(f"API: Visit successfully sent for {dog}: {response.json()}")
     except requests.RequestException as e:
-        logger.info(f"Failed to send visit data: {e}")
+        logger.error(f"API: Failed to send visit data: {e}")
         if hasattr(e, 'response') and e.response is not None:
             logger.info(f"Response content: {e.response.text}")

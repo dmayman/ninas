@@ -44,7 +44,7 @@ def main():
 
         # Check for motion before running inference
         if detect_motion(state.prev_frame, state.curr_frame):
-            logger.info("Motion detected. Evaluating frame...")
+            logger.debug("Motion detected. Evaluating frame...")
             result = evaluate_frames()
             dog = result["class"]
             confidence_scores = result["confidence_scores"]

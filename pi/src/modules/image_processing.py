@@ -37,9 +37,7 @@ def evaluate_frames():
     confidence_sums = {label: 0.0 for label in CLASS_LABELS}  # Sum of confidence scores for averaging
     confidence_averages = {label: 0.0 for label in CLASS_LABELS}  # Averaged confidence scores
 
-    for idx in range(VERIFY_TIMES):
-        logger.debug(f"Evaluating frame {idx}...")
-        
+    for idx in range(VERIFY_TIMES):        
         _, state.curr_frame = state.cap.read() if idx else (None, state.curr_frame)  # Read a new frame if idx > 0
         img = preprocess_image(state.curr_frame, INPUT_SIZE)  # Preprocess image
         interpreter.set_tensor(input_details[0]['index'], img)  # Set input tensor

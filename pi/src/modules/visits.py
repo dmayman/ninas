@@ -37,7 +37,6 @@ def update_visit(dog):
     """
     Updates the current visit with the current end time.
     """
-    logger.debug(f"Update_visit() for {dog}.")
     if (dog) == app_state.current_visit["dog"]:
         app_state.current_visit["end_time"] = datetime.datetime.now()
     else:

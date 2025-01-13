@@ -31,16 +31,18 @@ def control_vibration(position):
     if app_state.gpio is None:
         logger.info("GPIO functionality is disabled. No vibration control.")
         return
-    
-    if app_state.safety_buffer_active:
-        logger.info("Safety buffer is active. Vibration suppressed.")
-        return
 
     if position == "on":
+        if app_state.safety_buffer_active:
+            # Suppress vibration if safety buffer is active
+            logger.info("Safety buffer is active. Vibration suppressed.")
+            return
         if not ENABLE_VIBRATION:
+            # Override to disable vibration
             logger.info("Vibration is disabled by override.")
             return
-    
+
+        # Activate vibration
         app_state.gpio.output(VIBRATE_GPIO_PIN, app_state.gpio.HIGH)
         logger.info("Vibration activated for Nova.")
     else:
