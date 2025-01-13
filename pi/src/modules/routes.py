@@ -95,14 +95,13 @@ def simulate_camera(dog):
     """
     Updates the simulated images for the specified dog type and renders the video stream.
     """
-    global curr_frame, USE_DUMMY_IMAGES
     status_message = ''
     try:
         if dog == "off":
-            USE_DUMMY_IMAGES = False
+            state.use_dummy_images = False
             status_message = "Now using live camera feed."
         else:
-            USE_DUMMY_IMAGES = True
+            state.use_dummy_images = True
             directory = f"test-photos/{dog}-dummy"
             test.update_simulated_images(directory)
             status_message = f"Simulating Camera for {dog}"
