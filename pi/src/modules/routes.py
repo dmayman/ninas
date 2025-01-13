@@ -4,6 +4,7 @@ import datetime
 from config import REPORT_DATA_DIR, LOG_FILE
 import time
 import modules.testing as test
+from modules.state import app_state as state
 
 # Flask App
 app = Flask(__name__)
@@ -136,10 +137,10 @@ def video_feed():
     """
     print("serving video feed...")
     def generate():
-        global curr_frame
+        
         while True:
             # Check if curr_frame is available
-            if curr_frame is not None:
+            if state.curr_frame is not None:
                 # Encode the current frame as JPEG
                 _, buffer = cv2.imencode('.jpg', curr_frame)
                 frame = buffer.tobytes()
@@ -153,3 +154,33 @@ def video_feed():
 
     # Return the MJPEG stream response
     return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@app.route('/stream-reversed-logs')
+def stream_reversed_logs():
+    """
+    Streams the log file content in reversed order (bottom to top) using Server-Sent Events (SSE).
+    Continuously streams new updates.
+    """
+    def generate():
+        last_position = 0  # Track file position
+        while True:
+            if not os.path.exists(LOG_FILE):
+                yield "data: Log file not found.\n\n"
+                break
+
+            with open(LOG_FILE, 'r') as f:
+                f.seek(0, os.SEEK_END)  # Move to end of file
+                new_position = f.tell()
+
+                # If the file has grown, read from the last position
+                if new_position > last_position:
+                    f.seek(last_position)
+                    lines = f.readlines()
+                    reversed_lines = lines[::-1]  # Reverse the lines
+                    for line in reversed_lines:
+                        yield f"data: {line.strip()}\n\n"
+
+                last_position = new_position  # Update the last position
+                time.sleep(1)  # Wait before checking for new content
+
+    return Response(generate(), mimetype='text/event-stream')
