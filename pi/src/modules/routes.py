@@ -142,7 +142,7 @@ def video_feed():
             # Check if curr_frame is available
             if state.curr_frame is not None:
                 # Encode the current frame as JPEG
-                _, buffer = cv2.imencode('.jpg', curr_frame)
+                _, buffer = cv2.imencode('.jpg', state.curr_frame)
                 frame = buffer.tobytes()
 
                 # Yield the frame as part of the multipart MJPEG stream
