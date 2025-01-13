@@ -57,7 +57,7 @@ def finalize_visit():
     """
     Finalizes the current visit and sends data to the API.
     """
-    logger.info(f"{app_state.current_visit['dog']}'s visit complete.")
+    logger.info(f"{app_state.current_visit['dog']}'s visit complete. Dog: {app_state.current_visit['dog']}, Start: {app_state.current_visit['start_time']}, End: {app_state.current_visit['end_time']}")
 
     if app_state.current_visit["dog"] is not None:
         send_visit_to_api(
