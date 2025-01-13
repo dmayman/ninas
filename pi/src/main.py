@@ -93,7 +93,7 @@ def main():
             vibration.control_vibration("off")
 
         # Finalize visit if VISIT_TIMEOUT seconds have passed since last registered
-        if state.current_visit["dog"] is not None and time.time() - state.current_visit["end_time"] > VISIT_TIMEOUT:
+        if state.current_visit["dog"] is not None and time.time() - state.current_visit["end_time"].timestamp() > VISIT_TIMEOUT:
             visits.finalize_visit()
 
         state.prev_frame = state.curr_frame  # Update the previous frame

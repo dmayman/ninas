@@ -13,77 +13,54 @@ $nova_last_visit = get_last_visit("Nova");
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Lexend+Deca&family=Lexend+Peta&display=swap" rel="stylesheet">
-    HERE
+    <link href="https://fonts.googleapis.com/css2?family=Lexend+Deca:wght@100..900&family=Lexend+Peta&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
     <title>Mila and Nova</title>
-    <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: row;
-            height: 100vh;
-        }
-        .column {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            color: white;
-        }
-        .mila {
-            background-color: yellow;
-            color: black;
-        }
-        .nova {
-            background-color: blue;
-        }
-        .dog-emoji {
-            font-size: 100px;
-        }
-        .dog-name {
-            font-size: 36px;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-        .info {
-            font-size: 18px;
-            text-align: center;
-            margin-top: 10px;
-        }
-        .time {
-            font-size: 24px;
-            font-weight: bold;
-            margin-top: 5px;
-        }
-    </style>
 </head>
 <body>
     <!-- Mila's Column -->
     <div class="column mila">
-        <div class="dog-emoji"><img src="static/milamoji.png"></div>
-        <div class="dog-name">Mila</div>
-        <div class="info">Last eaten</div>
-        <div class="time" id="mila-last-eaten">
-            Loading...
+        <div class="main-section">    
+            <div class="dog-name">Mila</div>
+            <div class="dog-emoji"><img src="static/milamoji.png"></div>
+            <div class="info">Last eaten</div>
+            <div class="time" id="mila-last-eaten">
+                Loading...
+            </div>
+            <div class="info" id="mila-visit-time">
+                Loading...
+            </div>
+            <div class="arrow">
+                <img src="static/mila-arrow.svg" alt="Down Arrow">
+            </div>
         </div>
-        <div class="info" id="mila-visit-time">
-            Loading...
+        <div class="chart-section">
+            <div class="chart">
+                <div class="chart-title">Mila's Eating Habits</div>
+            </div> 
         </div>
     </div>
 
     <!-- Nova's Column -->
     <div class="column nova">
-        <div class="dog-emoji"><img src="static/novamoji.png"></div>
-        <div class="dog-name">Nova</div>
-        <div class="info">Last stolen</div>
-        <div class="time" id="nova-last-stolen">
-            Loading...
+        <div class="main-section">    
+            <div class="dog-name">Nova</div>
+            <div class="dog-emoji"><img src="static/novamoji.png"></div>
+            <div class="info">Last stolen</div>
+            <div class="time" id="nova-last-stolen">
+                Loading...
+            </div>
+            <div class="info" id="nova-visit-time">
+                Loading...
+            </div>
+            <div class="arrow">
+                <img src="static/nova-arrow.svg" alt="Down Arrow">
+            </div>
         </div>
-        <div class="info" id="nova-visit-time">
-            Loading...
+        <div class="chart-section">
+            <div class="chart">
+                <div class="chart-title">Nova's Eating Habits</div>
+            </div> 
         </div>
     </div>
 

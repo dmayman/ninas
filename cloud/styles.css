@@ -1,6 +1,6 @@
 @font-face {
     font-family: 'FREEFATFONT-Slanted';
-    src: url('FREEFATFONT-Slanted.otf') format('opentype');
+    src: url('static/fonts/FREEFATFONT-Slanted.otf') format('opentype');
     font-weight: normal;
     font-style: normal;
 }
@@ -13,62 +13,112 @@
     --font-fat: 'FREEFATFONT-Slanted', Arial, sans-serif;
     --font-title: 'Lexend Peta';
     --font-normal: 'Lexend Deca';
-    --color-mila: yellow;
-    --color-nova: blue;
-    --text-color-mila: black;
-    --text-color-nova: white;
-    --dog-emoji-size: 100px;
-    --dog-name-size: 36px;
-    --info-size: 18px;
-    --time-size: 24px;
+    --bg-color-mila: #12266F;
+    --headline-color-mila: #2346AE;
+    --highlight-color-mila: #5983FF;
+    --bg-color-nova: #F3E32C;
+    --headline-color-nova: #C0B423;
+    --highlight-color-nova: #847C1C;
+    --dog-emoji-width: 280px;
+    --headline-xl: 210px;
+    --headline-sm: 36px;
+    --body-md: 18px;
+    --body-sm: 16px;
 }
 
 body {
     margin: 0;
-    font-family: var(--font-primary);
+    font-family: var(--font-normal);
     display: flex;
     flex-direction: row;
     height: 100vh;
 }
 
 .column {
+    display: flex;
     flex: 1;
+    flex-direction: column;
+}
+
+.main-section{
+    flex: 1;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: 20px;
-    color: white;
+}
+.chart-section{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.chart {
+    height: 800px;
+    width: 100%;
+    background-color: white;
 }
 
 .mila {
-    background-color: var(--color-mila);
-    color: var(--text-color-mila);
+    background-color: var(--bg-color-mila);
+}
+.mila .dog-name {
+    color: var(--headline-color-mila);
 }
 
 .nova {
-    background-color: var(--color-nova);
-    color: var(--text-color-nova);
+    background-color: var(--bg-color-nova);
+}
+.nova .dog-name {
+    color: var(--headline-color-nova);
 }
 
 .dog-emoji {
-    font-size: var(--dog-emoji-size);
+    width: var(--dog-emoji-width);
+    margin-bottom: 56px;
+}
+.dog-emoji img{
+    width: 100%;
 }
 
 .dog-name {
-    font-size: var(--dog-name-size);
-    font-weight: bold;
-    margin-bottom: 10px;
+    font-family: var(--font-fat);
+    font-size: var(--headline-xl);
+    margin-bottom: -90px;
 }
 
 .info {
-    font-size: var(--info-size);
+    font-size: var(--body-md);
     text-align: center;
-    margin-top: 10px;
+    text-transform: uppercase;
+    font-family: var(--font-title);
+}
+.mila .info {
+    color: var(--highlight-color-mila);
+}
+.nova .info {
+    color: var(--highlight-color-nova);
 }
 
 .time {
-    font-size: var(--time-size);
-    font-weight: bold;
-    margin-top: 5px;
+    font-size: var(--headline-sm);
+    font-weight: 300;
+    margin-top: 24px;
+    margin-bottom: 12px;
+    letter-spacing: 2px;
+}
+.mila .time {
+    color: white;
+}
+
+.nova .time {
+    color: black;
+}
+
+.arrow {
+    position: absolute;
+    bottom: 20px;
 }
