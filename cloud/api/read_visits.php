@@ -13,6 +13,18 @@ function get_last_visit($dog) {
     }
 }
 
+// Fetch all visits for a specific dog in the past Y days
+function get_visits_in_past_days($dog, $days) {
+    try {
+        $pdo = get_db_connection();
+        $stmt = $pdo->prepare("SELECT * FROM visits WHERE dog = :dog AND end_time >= NOW() - INTERVAL :days DAY ORDER BY end_time DESC");
+        $stmt->execute(['dog' => $dog, 'days' => $days]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        return ["error" => $e->getMessage()];
+    }
+}
+
 // Helper function for relative time
 function time_elapsed_string($datetime) {
     $now = new DateTime();
@@ -26,4 +38,6 @@ function time_elapsed_string($datetime) {
 
     return implode(" ", $parts) . " ago";
 }
+
+
 ?>

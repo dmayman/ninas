@@ -1,0 +1,37 @@
+[28-Dec-2024 11:15:38 America/Boise] PHP Fatal error:  Uncaught Error: Call to undefined function get_all_visits() in /home1/hgzywhmy/ninas/index.php:5
+Stack trace:
+#0 {main}
+  thrown in /home1/hgzywhmy/ninas/index.php on line 5
+[28-Dec-2024 11:16:10 America/Boise] PHP Fatal error:  Uncaught Error: Call to undefined function get_all_visits() in /home1/hgzywhmy/ninas/index.php:5
+Stack trace:
+#0 {main}
+  thrown in /home1/hgzywhmy/ninas/index.php on line 5
+[28-Dec-2024 11:16:12 America/Boise] PHP Fatal error:  Uncaught Error: Call to undefined function get_all_visits() in /home1/hgzywhmy/ninas/index.php:5
+Stack trace:
+#0 {main}
+  thrown in /home1/hgzywhmy/ninas/index.php on line 5
+[12-Jan-2025 23:15:45 America/Boise] PHP Fatal error:  Uncaught Error: Call to undefined function get_visits_in_past_days() in /home1/hgzywhmy/ninas/index.php:9
+Stack trace:
+#0 {main}
+  thrown in /home1/hgzywhmy/ninas/index.php on line 9
+[12-Jan-2025 23:15:47 America/Boise] PHP Fatal error:  Uncaught Error: Call to undefined function get_visits_in_past_days() in /home1/hgzywhmy/ninas/index.php:9
+Stack trace:
+#0 {main}
+  thrown in /home1/hgzywhmy/ninas/index.php on line 9
+[12-Jan-2025 23:16:04 America/Boise] PHP Fatal error:  Uncaught Error: Call to undefined function get_visits_in_past_days() in /home1/hgzywhmy/ninas/index.php:9
+Stack trace:
+#0 {main}
+  thrown in /home1/hgzywhmy/ninas/index.php on line 9
+[12-Jan-2025 23:16:06 America/Boise] PHP Fatal error:  Uncaught Error: Call to undefined function get_visits_in_past_days() in /home1/hgzywhmy/ninas/index.php:9
+Stack trace:
+#0 {main}
+  thrown in /home1/hgzywhmy/ninas/index.php on line 9
+[12-Jan-2025 23:26:15 America/Boise] PHP Parse error:  Unmatched ')' in /home1/hgzywhmy/ninas/index.php on line 50
+[12-Jan-2025 23:26:54 America/Boise] PHP Fatal error:  Uncaught Error: Call to undefined function format_date() in /home1/hgzywhmy/ninas/index.php:50
+Stack trace:
+#0 {main}
+  thrown in /home1/hgzywhmy/ninas/index.php on line 50
+[12-Jan-2025 23:26:57 America/Boise] PHP Fatal error:  Uncaught Error: Call to undefined function format_date() in /home1/hgzywhmy/ninas/index.php:50
+Stack trace:
+#0 {main}
+  thrown in /home1/hgzywhmy/ninas/index.php on line 50

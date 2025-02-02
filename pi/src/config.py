@@ -6,7 +6,7 @@ API_URL = "https://ninas.davidmayman.com/api/record_visit.php"
 API_KEY_FILE = "api_key.txt"  # Path to the file containing the API key
 
 # Model configuration
-MODEL_PATH = "tm_dog_model/model3.tflite"  # Path to TensorFlow Lite model
+MODEL_PATH = "tm_dog_model/model4.tflite"  # Path to TensorFlow Lite model
 CLASS_LABELS = ["Mila", "Nova", "None"]  # Model class labels
 CONFIDENCE_THRESHOLD = 90  # Confidence threshold for valid detection
 INPUT_SIZE = (224, 224)  # Image size expected by the model
